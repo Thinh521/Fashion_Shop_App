@@ -1,0 +1,340 @@
+import {StyleSheet} from 'react-native';
+import {
+  BorderRadius,
+  Colors,
+  FontSizes,
+  FontWeights,
+  Shadows,
+  Spacing,
+} from '../../theme/theme';
+import {scale} from '../../utils/scaling';
+
+export default StyleSheet.create({
+  productDetailContainer: {
+    flex: 1,
+    backgroundColor: '#F9F9F9',
+  },
+
+  productDetailSLider: {
+    height: 300,
+    marginBlockStart: 20,
+  },
+
+  sliderButton: {
+    position: 'absolute',
+    backgroundColor: Colors.white,
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Shadows.medium,
+  },
+
+  leftButton: {
+    left: 10,
+  },
+
+  rightButton: {
+    right: 10,
+  },
+
+  dotContainer: {
+    position: 'absolute',
+    bottom: 10,
+    flexDirection: 'row',
+    alignSelf: 'center',
+    alignItems: 'center',
+  },
+
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 9999,
+    marginHorizontal: 4,
+  },
+
+  activeDot: {
+    width: 10,
+    height: 10,
+    backgroundColor: '#F83758',
+  },
+
+  inactiveDot: {
+    backgroundColor: '#ccc',
+  },
+
+  productDetailInfo: {
+    padding: 16,
+    marginBlockStart: 20,
+  },
+
+  colorContainer: {
+    marginBlock: 16,
+  },
+
+  colorTitle: {
+    fontSize: FontSizes.medium,
+    fontWeight: FontWeights.semiBold,
+    marginBlockEnd: Spacing.s10,
+  },
+
+  colorBox: {
+    flexDirection: 'row',
+  },
+
+  sizeTitle: {
+    fontSize: FontSizes.medium,
+    fontWeight: FontWeights.semiBold,
+    marginBlockEnd: 10,
+  },
+
+  quantityTitle: {
+    fontSize: FontSizes.medium,
+    fontWeight: FontWeights.semiBold,
+  },
+
+  availableContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  sizeBox: {
+    flexDirection: 'row',
+    marginBlockEnd: 10,
+  },
+
+  colorText: {
+    marginBottom: scale(8),
+    fontSize: FontSizes.medium,
+    fontWeight: FontWeights.medium,
+  },
+
+  selectedSize: {
+    backgroundColor: '#FA7189',
+  },
+
+  textSize: {
+    color: '#FA7189',
+    fontWeight: '500',
+  },
+
+  textSizeSelected: {
+    color: 'white',
+  },
+
+  quantityContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  quantityButton: {
+    padding: 5,
+    borderRadius: 4,
+    marginInlineEnd: 0,
+    backgroundColor: '#F2F2F2',
+    borderWidth: 1,
+    borderColor: '#ccc',
+  },
+
+  quantityInput: {
+    width: 50,
+    height: 30,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    fontSize: 14,
+    textAlign: 'center',
+    backgroundColor: '#fff',
+    paddingVertical: 0,
+    paddingHorizontal: 5,
+  },
+
+  productTitle: {
+    fontSize: FontSizes.large,
+    fontWeight: FontWeights.semiBold,
+    marginBlockEnd: Spacing.s4,
+  },
+
+  productSubtitle: {
+    fontSize: FontSizes.medium,
+    fontWeight: FontWeights.regular,
+    marginBlockEnd: Spacing.s4,
+  },
+
+  ratingContainer: {
+    marginBlockEnd: Spacing.s4,
+  },
+
+  stars: {
+    flexDirection: 'row',
+    marginRight: Spacing.s8,
+  },
+
+  starIcon: {
+    marginRight: 2,
+  },
+
+  ratingCount: {
+    color: Colors.gray,
+    fontSize: FontSizes.medium,
+  },
+
+  priceContainer: {
+    marginBlockEnd: Spacing.s4,
+  },
+
+  originalPrice: {
+    fontSize: FontSizes.medium,
+    fontWeight: FontWeights.regular,
+    textDecorationLine: 'line-through',
+    color: Colors.gray,
+    marginRight: Spacing.s10,
+  },
+
+  discountedPrice: {
+    fontSize: FontSizes.medium,
+    fontWeight: FontWeights.medium,
+    marginRight: Spacing.s10,
+  },
+
+  discountBadge: {
+    color: '#FA7189',
+    fontSize: FontSizes.medium,
+    fontWeight: FontWeights.bold,
+  },
+
+  heartContainer: {
+    width: scale(24),
+    height: scale(24),
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  heart: {
+    width: scale(27),
+    height: scale(27),
+    marginLeft: 2,
+  },
+
+  heartAima: {
+    position: 'absolute',
+    width: scale(100),
+    height: scale(100),
+    top: '50%',
+    left: '50%',
+    transform: [{translateX: -scale(50)}, {translateY: -scale(50)}],
+  },
+
+  detailsTitle: {
+    fontSize: FontSizes.medium,
+    fontWeight: FontWeights.medium,
+    marginBlockEnd: Spacing.s4,
+  },
+
+  detailsText: {
+    fontSize: FontSizes.small,
+    color: Colors.regular,
+    marginBlockEnd: Spacing.s16,
+    lineHeight: 16,
+  },
+
+  featuresContainer: {
+    gap: 10,
+    marginBlockEnd: Spacing.s10,
+  },
+
+  featureItem: {
+    borderWidth: 1,
+    borderColor: '#828282',
+    paddingHorizontal: 5,
+    paddingVertical: 5,
+    borderRadius: BorderRadius.r4,
+  },
+
+  featureText: {
+    color: Colors.gray,
+    textAlign: 'center',
+    fontSize: FontSizes.xsmall,
+  },
+
+  footerButton: {
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+
+  cartButton: {
+    backgroundColor: '#0B3689',
+    flex: 1,
+    padding: 16,
+    borderRadius: 8,
+    marginRight: 8,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  buyButton: {
+    backgroundColor: '#31B769',
+    flex: 1,
+    padding: 16,
+    borderRadius: 8,
+    marginLeft: 8,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  buttonText: {
+    color: Colors.white,
+    fontSize: FontSizes.medium,
+    fontWeight: FontWeights.bold,
+    marginLeft: Spacing.s8,
+  },
+
+  colorOption: {
+    width: 40, // Đường kính vòng tròn
+    height: 40, // Đường kính vòng tròn
+    borderRadius: 20, // Để tạo hình tròn
+    margin: 5, // Khoảng cách giữa các vòng tròn
+    borderWidth: 2, // Đường viền cho vòng tròn
+    borderColor: '#ccc', // Màu viền
+    justifyContent: 'center', // Căn giữa nội dung
+    alignItems: 'center', // Căn giữa nội dung
+  },
+  colorCircle: {
+    width: 30, // Độ rộng vòng tròn bên trong
+    height: 30, // Chiều cao vòng tròn bên trong
+    borderRadius: 15, // Để tạo hình tròn bên trong
+  },
+  selectedColor: {
+    borderColor: '#000', // Màu viền khi được chọn (Ví dụ: Đen)
+    borderWidth: 3, // Độ rộng viền khi chọn
+  },
+
+  stockInfo: {
+    marginTop: 8,
+    fontSize: 14,
+    color: '#333',
+  },
+
+  galleryWrapper: {
+    position: 'relative',
+    width: '100%',
+    height: 300,
+  },
+
+  dotsContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+
+  footerContainer: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+  },
+});
