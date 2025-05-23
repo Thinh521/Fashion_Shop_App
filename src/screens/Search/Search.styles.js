@@ -1,224 +1,161 @@
 import {StyleSheet} from 'react-native';
-import {Shadows} from '../../theme/theme';
+import {Colors, FontSizes, FontWeights} from '../../theme/theme';
+import {scale} from '../../utils/scaling';
 
-export default StyleSheet.create({
-  background: {
-    backgroundColor: '#F8F8F8',
-    padding: 16,
-  },
+const createStyles = theme =>
+  StyleSheet.create({
+    searchContainer: {
+      marginBottom: scale(20),
+    },
+    searchInput: {
+      height: scale(48),
+      borderRadius: 10,
+    },
+    sectionHeader: {
+      marginBottom: scale(20),
+    },
+    sectionTitle: {
+      color: theme.text,
+      fontWeight: FontWeights.bold,
+      fontSize: FontSizes.semiLarge,
+    },
+    actionsContainer: {
+      flexDirection: 'row',
+      gap: scale(12),
+    },
+    actionButton: {
+      flexDirection: 'row',
+      borderWidth: 1,
+      borderColor: theme.border,
+      paddingVertical: scale(6),
+      paddingHorizontal: scale(10),
+      backgroundColor: theme.card,
+      borderRadius: 6,
+    },
+    actionIcon: {
+      width: scale(16),
+      height: scale(16),
+      marginLeft: scale(4),
+      color: theme.icon,
+    },
+    actionText: {
+      color: theme.text,
+      fontSize: FontSizes.small,
+      fontWeight: FontWeights.medium,
+    },
+    filterModalContainer: {
+      flex: 1,
+      justifyContent: 'flex-end',
+      backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    filterModalOverlay: {
+      flex: 1,
+    },
+    filterContainer: {
+      backgroundColor: theme.background,
+      padding: scale(15),
+      paddingTop: scale(30),
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      maxHeight: '50%',
+    },
+    filterSection: {
+      marginBottom: scale(15),
+    },
+    title: {
+      color: theme.text,
+      fontSize: FontSizes.semiLarge,
+      fontWeight: 'bold',
+      marginBottom: scale(10),
+    },
+    label: {
+      color: theme.text,
+      fontSize: FontSizes.medium,
+      fontWeight: FontWeights.medium,
+      marginBottom: scale(10),
+    },
+    typeButton: {
+      height: 50,
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: 5,
+      justifyContent: 'center',
+      paddingHorizontal: 16,
+      backgroundColor: theme.card,
+    },
+    modalContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    modalContent: {
+      width: '80%',
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.card,
+      borderRadius: 10,
+      maxHeight: '60%',
+    },
+    modalItem: {
+      padding: 15,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+    },
+    modalItemText: {
+      color: theme.text,
+      fontSize: FontSizes.medium,
+    },
+    selectedSortItem: {
+      backgroundColor: Colors.primaryLight,
+    },
+    selectedSortText: {
+      color: Colors.primary,
+      fontWeight: FontWeights.bold,
+    },
+    priceInputContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    priceInput: {
+      flex: 1,
+      height: 50,
+      borderColor: theme.border,
+      borderWidth: 1,
+      paddingHorizontal: 16,
+      backgroundColor: theme.card,
+      borderRadius: 5,
+    },
+    priceSeparator: {
+      marginHorizontal: 10,
+      fontSize: 16,
+    },
+    buttonContainer: {
+      gap: scale(15),
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginTop: scale(10),
+    },
+    buttonfilter: {
+      flex: 1,
+      paddingVertical: scale(10),
+      borderRadius: 5,
+      alignItems: 'center',
+    },
+    closeButton: {
+      backgroundColor: Colors.gray,
+    },
+    buttonText: {
+      color: Colors.white,
+      fontSize: FontSizes.medium,
+      fontWeight: FontWeights.bold,
+    },
+    noResultText: {
+      textAlign: 'center',
+      fontSize: FontSizes.medium,
+      color: Colors.gray,
+      padding: scale(20),
+    },
+  });
 
-  productItemContainer: {
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 16,
-    overflow: 'hidden',
-    backgroundColor: '#FFFFFF',
-    ...Shadows.medium,
-  },
-
-  productContainer: {
-    gap: 16,
-  },
-
-  image: {
-    width: 120,
-    height: 150,
-    borderRadius: 8,
-  },
-  detailsContainer: {
-    flex: 1,
-    justifyContent: 'space-between',
-  },
-
-  bottomRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-
-  productName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000000',
-    marginBottom: 4,
-    flexShrink: 1,
-  },
-
-  productDescription: {
-    fontSize: 14,
-    color: '#666666',
-    marginBottom: 12,
-    flexShrink: 1,
-  },
-
-  specValueContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    backgroundColor: '#F2F2F2',
-    borderRadius: 4,
-    minWidth: 80,
-  },
-
-  specsContainer: {
-    flexDirection: 'row',
-    gap: 20,
-    marginBottom: 0,
-  },
-
-  specItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-
-  specLabel: {
-    fontSize: 14,
-    color: '#666666',
-  },
-
-  specValue: {
-    flexDirection: 'row',
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#000000',
-  },
-
-  cartQuantityPrice: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  quantityContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  quantityButton: {
-    padding: 6,
-    borderRadius: 4,
-    marginInlineEnd: 0,
-    backgroundColor: '#F2F2F2',
-  },
-
-  quantityInput: {
-    width: 50,
-    height: 29,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    fontSize: 14,
-    textAlign: 'center',
-    backgroundColor: '#fff',
-    paddingVertical: 0,
-    paddingHorizontal: 5,
-  },
-
-  deliveryText: {
-    fontSize: 14,
-    color: '#666666',
-  },
-
-  deliveryDate: {
-    fontWeight: '500',
-    color: '#000000',
-  },
-
-  paymentContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  couponIcon: {
-    marginRight: 8,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000000',
-  },
-  selectButtonText: {
-    color: '#FF6B00',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#EEEEEE',
-    marginVertical: 12,
-  },
-  paymentRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  paymentLabel: {
-    fontSize: 14,
-    color: '#666666',
-  },
-  paymentValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000000',
-  },
-  linkText: {
-    color: '#FF6B00',
-    fontSize: 14,
-    marginLeft: 8,
-  },
-  freeText: {
-    fontSize: 14,
-    color: '#00A650',
-  },
-  footerContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: -2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  totalPrice: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000000',
-  },
-  deleteButton: {
-    backgroundColor: 'red',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 80,
-    height: '92%',
-    borderTopRightRadius: 8,
-    borderBottomRightRadius: 8,
-    ...Shadows.medium,
-  },
-  deleteButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-});
+export default createStyles;

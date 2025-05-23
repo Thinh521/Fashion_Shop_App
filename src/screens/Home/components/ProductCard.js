@@ -11,6 +11,7 @@ import {StartIcon, WishListIcon} from '../../../assets/icons/Icons';
 import {Colors, FontSizes, FontWeights, Shadows} from '../../../theme/theme';
 import {scale} from '../../../utils/scaling';
 import SkeletonPlaceholder from 'react-native-skeleton-placeholder';
+import {useTheme} from '../../../contexts/ThemeContext';
 
 // Hàm tính giá đã giảm
 const getDiscountedPrice = (priceString, discountPercent) => {
@@ -20,6 +21,8 @@ const getDiscountedPrice = (priceString, discountPercent) => {
 };
 
 const ProductCard = ({item, width, isWishlisted, isLoading, onPress}) => {
+  const {theme} = useTheme();
+  const styles = createStyles(theme);
   const {width: windowWidth} = useWindowDimensions();
   const productItemWidth = width || (windowWidth - 42) / 2;
 
@@ -130,94 +133,97 @@ const ProductCard = ({item, width, isWishlisted, isLoading, onPress}) => {
   );
 };
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: Colors.white,
-    borderRadius: 8,
-    ...Shadows.medium,
-    marginBottom: scale(10),
-  },
-  productCard: {
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    backgroundColor: '#fff',
-  },
-  productImageContainer: {
-    position: 'relative',
-  },
-  productImage: {
-    width: '100%',
-    height: scale(124),
-    borderRadius: 4,
-  },
-  productWishlist: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: scale(4),
-    borderRadius: 9999,
-    backgroundColor: Colors.white,
-    ...Shadows.medium,
-  },
-  productInfo: {
-    padding: scale(10),
-  },
-  productTitle: {
-    fontSize: FontSizes.regular,
-    fontWeight: FontWeights.medium,
-    marginBottom: scale(6),
-    color: Colors.black,
-  },
-  productDescription: {
-    lineHeight: scale(16),
-    marginBottom: scale(6),
-    fontSize: FontSizes.small,
-    fontWeight: FontWeights.regular,
-    color: Colors.gray,
-  },
-  currentPrice: {
-    marginBottom: scale(6),
-    fontWeight: FontWeights.bold,
-    fontSize: FontSizes.semiLarge,
-    color: Colors.black,
-  },
-  priceContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: scale(6),
-  },
-  originalPrice: {
-    color: Colors.gray,
-    fontSize: FontSizes.medium,
-    marginRight: scale(10),
-    textDecorationLine: 'line-through',
-  },
-  discount: {
-    color: '#FF6B00',
-    fontSize: FontSizes.medium,
-    fontWeight: FontWeights.bold,
-  },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  stars: {
-    flexDirection: 'row',
-    marginRight: scale(10),
-  },
-  starIcon: {
-    width: scale(12),
-    height: scale(12),
-    marginRight: scale(2),
-  },
-  ratingCount: {
-    color: Colors.gray,
-    fontSize: FontSizes.small,
-  },
-});
+const createStyles = theme =>
+  StyleSheet.create({
+    card: {
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.card,
+      borderRadius: 8,
+      ...Shadows.medium,
+      marginBottom: scale(10),
+    },
+    productCard: {
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: '#ccc',
+      backgroundColor: '#fff',
+    },
+    productImageContainer: {
+      position: 'relative',
+    },
+    productImage: {
+      width: '100%',
+      height: scale(124),
+      borderRadius: 4,
+    },
+    productWishlist: {
+      position: 'absolute',
+      top: 8,
+      right: 8,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: scale(4),
+      borderRadius: 9999,
+      backgroundColor: Colors.white,
+      ...Shadows.medium,
+    },
+    productInfo: {
+      padding: scale(10),
+    },
+    productTitle: {
+      fontSize: FontSizes.regular,
+      fontWeight: FontWeights.medium,
+      marginBottom: scale(6),
+      color: theme.text,
+    },
+    productDescription: {
+      lineHeight: scale(16),
+      marginBottom: scale(6),
+      fontSize: FontSizes.small,
+      fontWeight: FontWeights.regular,
+      color: Colors.gray,
+    },
+    currentPrice: {
+      marginBottom: scale(6),
+      fontWeight: FontWeights.bold,
+      fontSize: FontSizes.semiLarge,
+      color: theme.text,
+    },
+    priceContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: scale(6),
+    },
+    originalPrice: {
+      color: Colors.gray,
+      fontSize: FontSizes.medium,
+      marginRight: scale(10),
+      textDecorationLine: 'line-through',
+    },
+    discount: {
+      color: '#FF6B00',
+      fontSize: FontSizes.medium,
+      fontWeight: FontWeights.bold,
+    },
+    ratingContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    stars: {
+      flexDirection: 'row',
+      marginRight: scale(10),
+    },
+    starIcon: {
+      width: scale(12),
+      height: scale(12),
+      marginRight: scale(2),
+    },
+    ratingCount: {
+      color: Colors.gray,
+      fontSize: FontSizes.small,
+    },
+  });
 
 export default ProductCard;

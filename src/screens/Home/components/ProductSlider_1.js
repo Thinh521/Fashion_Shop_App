@@ -13,8 +13,11 @@ import {useFocusEffect, useNavigation} from '@react-navigation/core';
 import {getCurrentUser, getWishList} from '../../../utils/storage';
 import {isTablet, scale} from '../../../utils/scaling';
 import ProductCard from './ProductCard';
+import {useTheme} from '../../../contexts/ThemeContext';
 
 const ProductSlider_1 = () => {
+  const {theme} = useTheme();
+  const styles = createStyles(theme);
   const flatListRef = useRef(null);
   const navigation = useNavigation();
 
@@ -119,28 +122,29 @@ const ProductSlider_1 = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    position: 'relative',
-  },
-  navButton: {
-    position: 'absolute',
-    top: '45%',
-    width: scale(40),
-    height: scale(40),
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: Colors.white,
-    borderRadius: 9999,
-    transform: [{translateY: -20}],
-    ...Shadows.medium,
-  },
-  leftButton: {
-    left: 0,
-  },
-  rightButton: {
-    right: 0,
-  },
-});
+const createStyles = theme =>
+  StyleSheet.create({
+    container: {
+      position: 'relative',
+    },
+    navButton: {
+      position: 'absolute',
+      top: '45%',
+      width: scale(40),
+      height: scale(40),
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: theme.border,
+      borderRadius: 9999,
+      transform: [{translateY: -20}],
+      ...Shadows.medium,
+    },
+    leftButton: {
+      left: 0,
+    },
+    rightButton: {
+      right: 0,
+    },
+  });
 
 export default ProductSlider_1;

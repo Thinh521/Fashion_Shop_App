@@ -1,7 +1,8 @@
 import React, {useState} from 'react';
 import {TextInput, TouchableOpacity, View, Text} from 'react-native';
 import {EyeIcon, EyeOffIcon} from '../../../assets/icons/Icons';
-import styles from './Input.styles';
+import {useTheme} from '../../../contexts/ThemeContext';
+import createStyles from './Input.styles';
 
 const Input = ({
   placeholder,
@@ -21,6 +22,8 @@ const Input = ({
   label,
   ...rest
 }) => {
+  const {theme} = useTheme();
+  const styles = createStyles(theme);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const togglePasswordVisibility = () => {

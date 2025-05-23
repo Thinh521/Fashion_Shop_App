@@ -18,7 +18,7 @@ const productData = [
       average: 4,
     },
     stock: 120,
-    categories: ['Winter Wear', 'Jacket'],
+    category: 'Shirt',
     colors: ['#000', '#ccc', '#000080'],
     sizes: ['S', 'M', 'L', 'XL'],
     brand: 'FashionCo',

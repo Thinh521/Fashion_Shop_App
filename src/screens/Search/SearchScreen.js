@@ -1,364 +1,357 @@
-import React, {useCallback, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useState, useRef} from 'react';
 import {
-  ActivityIndicator,
-  Animated,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
   View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  TextInput,
+  FlatList,
+  Animated,
+  Easing,
+  Modal,
 } from 'react-native';
-import {useFocusEffect, useNavigation} from '@react-navigation/native';
-import FastImage from 'react-native-fast-image';
-import {Swipeable} from 'react-native-gesture-handler';
-
-import styles from './Search.styles';
+import {
+  FilterIcon,
+  MicIcon,
+  SearchIcon_2,
+  SortIcon,
+} from '../../assets/icons/Icons';
+import Input from '../../components/ui/input';
+import ProductList from '../../components/product/ProductList';
 import commonStyles from '../../styles/commonStyles';
-import {CouponsIcon, MinusIcon, PlusIcon} from '../../assets/icons/Icons';
-import {
-  TextButton,
-  Button,
-  IconButton,
-} from '../../components/ui/button/Button';
-import {
-  getCart,
-  getCurrentUser,
-  removeFromCart,
-  updateCartQuantity,
-} from '../../utils/storage';
-
-const ProductItem = React.memo(({item, onDelete}) => {
-  const convertHexToColorName = hex => {
-    const colorMap = {
-      '#000': 'Black',
-      '#000000': 'Black',
-      '#fff': 'White',
-      '#ffffff': 'White',
-      '#ff0000': 'red',
-      '#00ff00': 'lime',
-      '#000080': 'Blue',
-    };
-    return colorMap[hex?.toLowerCase()] || hex;
-  };
-
-  const fadeAnim = useRef(new Animated.Value(1)).current;
-  const [quantity, setQuantity] = useState(item.quantity || 1);
-
-  const updateCartItem = useCallback(async (productItem, newQuantity) => {
-    try {
-      const user = getCurrentUser();
-      if (!user) {
-        return;
-      }
-
-      await updateCartQuantity(user.id, productItem.variantId, newQuantity);
-    } catch (error) {
-      console.error('Update cart error:', error);
-    }
-  }, []);
-
-  const increase = () => {
-    if (quantity >= item.availableStock) {
-      return;
-    }
-    const newQuantity = quantity + 1;
-    setQuantity(newQuantity);
-    updateCartItem(item, newQuantity);
-  };
-
-  const decrease = () => {
-    const newQuantity = quantity > 1 ? quantity - 1 : 1;
-    setQuantity(newQuantity);
-    updateCartItem(item, newQuantity);
-  };
-
-  const handleDelete = () => {
-    Animated.timing(fadeAnim, {
-      toValue: 0,
-      duration: 200,
-      useNativeDriver: true,
-    }).start(() => {
-      onDelete(item.variantId);
-    });
-  };
-
-  const renderRightActions = () => (
-    <Animated.View style={{opacity: fadeAnim}}>
-      <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
-        <Text style={styles.deleteButtonText}>Xoá</Text>
-      </TouchableOpacity>
-    </Animated.View>
-  );
-
-  return (
-    <Swipeable renderRightActions={renderRightActions}>
-      <Animated.View style={[styles.productItemContainer, {opacity: fadeAnim}]}>
-        <View style={[commonStyles.row, styles.productContainer]}>
-          <FastImage
-            style={styles.image}
-            resizeMode={FastImage.resizeMode.cover}
-            source={item.images?.[0]}
-          />
-
-          <View style={styles.detailsContainer}>
-            {/*Tên sản phẩm */}
-            <Text style={styles.productName} numberOfLines={2}>
-              {item.productName}
-            </Text>
-
-            {/* Giá sản phẩm */}
-            <Text style={styles.productDescription}>
-              {item.price} {item.discount && `(-${item.discount}%)`}
-            </Text>
-
-            {/* Phân loại */}
-            <View style={styles.specsContainer}>
-              <View style={styles.specItem}>
-                <Text style={styles.specLabel}>Màu: </Text>
-                <Text style={styles.specValue}>
-                  {convertHexToColorName(item.selectedColor || item.colorName)}
-                </Text>
-              </View>
-              <View style={styles.specItem}>
-                <Text style={styles.specLabel}>Size: </Text>
-                <Text style={styles.specValue}>
-                  {convertHexToColorName(item.selectedSize || item.sizeName)}
-                </Text>
-              </View>
-            </View>
-
-            {/* Dòng 4: Số lượng và tổng */}
-            <View style={styles.bottomRow}>
-              {/* Phần số lượng */}
-              <View style={styles.quantityContainer}>
-                <IconButton
-                  iconStyle={styles.quantityButton}
-                  icon={<MinusIcon fill="#000" width={18} height={18} />}
-                  onPress={decrease}
-                />
-
-                <TextInput
-                  style={styles.quantityInput}
-                  value={String(quantity)}
-                  onChangeText={text => {
-                    const num = parseInt(text);
-                    if (!isNaN(num) && num > 0) {
-                      setQuantity(num);
-                      updateCartItem(item, num);
-                    }
-                  }}
-                  keyboardType="numeric"
-                  maxLength={4}
-                />
-
-                <IconButton
-                  iconStyle={styles.quantityButton}
-                  icon={<PlusIcon fill="#000" width={18} height={18} />}
-                  onPress={increase}
-                />
-              </View>
-
-              {/* Phần tổng giá */}
-              <Text style={styles.deliveryDate}>
-                {calculateItemTotal(item, quantity)}
-              </Text>
-            </View>
-          </View>
-        </View>
-      </Animated.View>
-    </Swipeable>
-  );
-});
-
-const PaymentDetails = React.memo(({totalAmount, onProceed}) => (
-  <View style={styles.paymentContainer}>
-    <View style={styles.sectionHeader}>
-      <View style={commonStyles.row}>
-        <CouponsIcon style={styles.couponIcon} />
-        <Text style={styles.sectionTitle}>Apply Coupons</Text>
-      </View>
-      <TextButton text="Select" textStyle={styles.selectButtonText} />
-    </View>
-
-    <View style={styles.divider} />
-
-    <Text style={styles.sectionTitle}>Order Payment Details</Text>
-
-    <View style={styles.paymentRow}>
-      <Text style={styles.paymentLabel}>Order Amount</Text>
-      <Text style={styles.paymentValue}>₹{totalAmount.toFixed(2)}</Text>
-    </View>
-
-    <View style={[styles.paymentRow, {marginBottom: 8}]}>
-      <View style={commonStyles.row}>
-        <Text style={styles.paymentLabel}>Convenience</Text>
-        <TextButton text="Know More" textStyle={styles.linkText} />
-      </View>
-      <TextButton text="Apply Coupon" textStyle={styles.linkText} />
-    </View>
-
-    <View style={styles.paymentRow}>
-      <Text style={styles.paymentLabel}>Delivery Fee</Text>
-      <Text style={styles.freeText}>Free</Text>
-    </View>
-
-    <View style={styles.divider} />
-
-    <View style={styles.paymentRow}>
-      <Text style={styles.sectionTitle}>Order Total</Text>
-      <Text style={styles.paymentValue}>₹{totalAmount.toFixed(2)}</Text>
-    </View>
-
-    <View style={[commonStyles.row, {justifyContent: 'flex-start'}]}>
-      <Text style={styles.paymentLabel}>EMI Available</Text>
-      <TextButton text="Details" textStyle={styles.linkText} />
-    </View>
-  </View>
-));
-
-const calculateItemTotal = (item, quantity) => {
-  const price = parseFloat(item.price.replace(/[^\d.]/g, '')) || 0;
-  return `₹${(price * quantity).toFixed(2)}`;
-};
-
-const EmptyCart = () => (
-  <View style={[commonStyles.center, {flex: 1, padding: 20}]}>
-    <Text style={{fontSize: 18, color: '#666', textAlign: 'center'}}>
-      Your cart is empty. Start shopping to add items!
-    </Text>
-  </View>
-);
+import {useFocusEffect} from '@react-navigation/core';
+import productData from '../../data/productData';
+import {Button} from '../../components/ui/button/Button';
+import {scale} from '../../utils/scaling';
+import {useTheme} from '../../contexts/ThemeContext';
+import createStyles from './Search.styles';
+import {showMessage} from 'react-native-flash-message';
 
 const SearchScreen = () => {
-  const navigation = useNavigation();
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const {theme} = useTheme();
+  const styles = createStyles(theme);
+  const [searchItem, setSearchItem] = useState('');
+  const [totalProduct, setTotalProduct] = useState(0);
+  const [filters, setFilters] = useState({
+    type: 'Tất cả',
+    minPrice: '',
+    maxPrice: '',
+  });
+  const [tempFilters, setTempFilters] = useState(filters);
+  const [sort, setSort] = useState('Tất cả');
+  const [tempSort, setTempSort] = useState(sort);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [sortModalVisible, setSortModalVisible] = useState(false);
+  const [filterReset, setFilterReset] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const slideAnim = useRef(new Animated.Value(0)).current;
 
-  const totalAmount = useMemo(
-    () =>
-      products.reduce((sum, item) => {
-        const price = parseFloat(item.price.replace(/[^\d.]/g, '')) || 0;
-        return sum + price * (item.quantity || 1);
-      }, 0),
-    [products],
-  );
-
-  const handleShipping = useCallback(() => {
-    navigation.navigate('NoBottomTab', {screen: 'Shipping'});
-  }, [navigation]);
-
-  const fetchCart = useCallback(async () => {
-    try {
-      setLoading(true);
-      const user = getCurrentUser();
-      if (!user) {
-        setError('Vui lòng đăng nhập để xem giỏ hàng');
-        setProducts([]);
-        return;
-      }
-
-      const cartItems = getCart(user.id);
-      if (!cartItems || cartItems.length === 0) {
-        setProducts([]);
-        return;
-      }
-
-      const validatedItems = cartItems.map(item => ({
-        ...item,
-        quantity: item.quantity || 1,
-      }));
-
-      setProducts(validatedItems);
-      setError(null);
-    } catch (e) {
-      console.error('Fetch cart error:', e);
-      setError('Lỗi khi tải giỏ hàng');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const productTypes = [
+    'Tất cả',
+    'Shirt',
+    'Thời trang',
+    'Đồ gia dụng',
+    'Thực phẩm',
+    'Mỹ phẩm',
+  ];
+  const sortOptions = [
+    'Tất cả',
+    'Tên A-Z',
+    'Tên Z-A',
+    'Giá thấp đến cao',
+    'Giá cao đến thấp',
+  ];
 
   useFocusEffect(
     useCallback(() => {
-      fetchCart();
-    }, [fetchCart]),
+      setTotalProduct(productData.length);
+    }, []),
   );
 
-  const handleDelete = useCallback(async variantId => {
-    try {
-      const user = getCurrentUser();
-      if (!user) {
-        setError('User not logged in');
-        return;
+  const toggleModal = useCallback(
+    (modalType, open) => {
+      const setModal =
+        modalType === 'filter' ? setFilterModalVisible : setSortModalVisible;
+      if (open) {
+        modalType === 'filter' ? setTempFilters(filters) : setTempSort(sort);
+        setModal(true);
+        Animated.timing(slideAnim, {
+          toValue: 1,
+          duration: 200,
+          easing: Easing.ease,
+          useNativeDriver: true,
+        }).start();
+      } else {
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 200,
+          easing: Easing.ease,
+          useNativeDriver: true,
+        }).start(() => setModal(false));
       }
+    },
+    [
+      slideAnim,
+      filters,
+      sort,
+      setTempFilters,
+      setTempSort,
+      setFilterModalVisible,
+      setSortModalVisible,
+    ],
+  );
 
-      await removeFromCart(user.id, variantId);
-      setProducts(prev => prev.filter(item => item.variantId !== variantId));
-    } catch (e) {
-      console.error('Delete item error:', e);
+  const applyFilters = useCallback(() => {
+    if (
+      tempFilters.minPrice &&
+      tempFilters.maxPrice &&
+      Number(tempFilters.minPrice) > Number(tempFilters.maxPrice)
+    ) {
+      showMessage({
+        message: 'Lỗi',
+        description: 'Giá tối thiểu phải nhỏ hơn hoặc bằng giá tối đa',
+        type: 'danger',
+        duration: 2000,
+        icon: 'danger',
+        style: {
+          alignItems: 'center',
+          paddingVertical: 20,
+        },
+      });
+      return;
     }
-  }, []);
 
-  if (loading) {
-    return (
-      <View style={commonStyles.center}>
-        <ActivityIndicator size="large" color="gray" />
-      </View>
-    );
-  }
+    setFilters(tempFilters);
+    toggleModal('filter', false);
+    setFilterReset(true);
+  }, [tempFilters, setFilters, setFilterReset, toggleModal]);
 
-  if (error) {
-    return (
-      <View style={commonStyles.center}>
-        <Text style={{color: 'red'}}>{error}</Text>
-      </View>
-    );
-  }
+  const applySort = useCallback(() => {
+    setSort(tempSort);
+    toggleModal('sort', false);
+  }, [tempSort, setSort, toggleModal]);
 
-  if (products.length === 0) {
-    return <EmptyCart />;
-  }
+  const filterTranslateY = slideAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [300, 0],
+  });
 
-  return (
-    <ScrollView showsVerticalScrollIndicator={false}>
-      <View style={commonStyles.flex1}>
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={commonStyles.flexGrow1}>
-          <View style={[commonStyles.screenContainer, styles.background]}>
-            {products.map(item => (
-              <ProductItem
-                key={item.variantId}
-                item={item}
-                onDelete={handleDelete}
-              />
-            ))}
+  // Reset Filter
+  const resetFilter = () => {
+    const defaultFilter = {
+      type: 'Tất cả',
+      minPrice: '',
+      maxPrice: '',
+    };
+    setFilters(defaultFilter);
+    setTempFilters(defaultFilter);
+    setFilterReset(false);
+  };
 
-            <PaymentDetails
-              totalAmount={totalAmount}
-              onProceed={handleShipping}
+  // Render sort label
+  const renderSortLabel = sortOption => {
+    switch (sortOption) {
+      case 'Tên A-Z':
+        return 'Tên A-Z';
+      case 'Tên Z-A':
+        return 'Tên Z-A';
+      case 'Giá thấp đến cao':
+        return 'Giá A-Z';
+      case 'Giá cao đến thấp':
+        return 'Giá Z-A';
+      default:
+        return 'Sort';
+    }
+  };
+
+  const renderModal = (type, content) => (
+    <Modal
+      animationType="none"
+      transparent
+      visible={type === 'filter' ? filterModalVisible : sortModalVisible}
+      onRequestClose={() => toggleModal(type, false)}>
+      <View style={styles.filterModalContainer}>
+        <TouchableOpacity
+          style={styles.filterModalOverlay}
+          onPress={() => toggleModal(type, false)}
+        />
+        <Animated.View
+          style={[
+            styles.filterContainer,
+            {transform: [{translateY: filterTranslateY}]},
+          ]}>
+          {content}
+          <View style={styles.buttonContainer}>
+            <Button
+              text="Hủy"
+              textStyle={styles.buttonText}
+              buttonStyle={[styles.buttonfilter, styles.closeButton]}
+              onPress={() => toggleModal(type, false)}
+            />
+            <Button
+              text="Áp dụng"
+              textStyle={styles.buttonText_2}
+              buttonStyle={styles.buttonfilter}
+              onPress={type === 'filter' ? applyFilters : applySort}
             />
           </View>
-        </ScrollView>
+        </Animated.View>
+      </View>
+    </Modal>
+  );
 
-        <View style={styles.footerContainer}>
-          <View style={styles.footerRow}>
-            <Text style={styles.totalPrice}>₹{totalAmount.toFixed(2)}</Text>
-            <TextButton text="View Details" textStyle={styles.linkText} />
-          </View>
-          <Button
-            text="Proceed to Payment"
-            onPress={handleShipping}
-            buttonStyle={{backgroundColor: '#F83758', borderRadius: 4}}
-            width="100%"
-            height={55}
-            textStyle={{fontSize: 17, fontWeight: '600'}}
+  return (
+    <View style={{backgroundColor: theme.background}}>
+      <ScrollView
+        style={{padding: scale(16)}}
+        showsVerticalScrollIndicator={false}>
+        <View style={styles.searchContainer}>
+          <Input
+            placeholder="Search any Product.."
+            leftIcon={SearchIcon_2}
+            rightIcon={MicIcon}
+            value={searchItem}
+            onChangeText={setSearchItem}
+            inputStyle={styles.searchInput}
           />
         </View>
-      </View>
-    </ScrollView>
+        <View style={[commonStyles.rowSpaceBetween, styles.sectionHeader]}>
+          <Text style={styles.sectionTitle}>Total product: {totalProduct}</Text>
+          <View style={styles.actionsContainer}>
+            <TouchableOpacity
+              style={[commonStyles.row, styles.actionButton]}
+              onPress={() => toggleModal('sort', true)}>
+              <Text style={styles.actionText}>
+                {renderSortLabel(sort === 'Tất cả' ? 'Sort' : sort)}
+              </Text>
+              <SortIcon style={styles.actionIcon} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[commonStyles.row, styles.actionButton]}
+              onPress={
+                filterReset ? resetFilter : () => toggleModal('filter', true)
+              }>
+              <Text style={styles.actionText}>
+                {filterReset ? 'Reset' : 'Filter'}
+              </Text>
+              <FilterIcon style={styles.actionIcon} />
+            </TouchableOpacity>
+          </View>
+        </View>
+        <ProductList
+          searchItem={searchItem}
+          filters={filters}
+          sort={sort}
+          setTotalProduct={setTotalProduct}
+        />
+      </ScrollView>
+
+      {/* Modal cho filter */}
+      {renderModal(
+        'filter',
+        <>
+          <Text style={styles.title}>Lọc sản phẩm</Text>
+          <View style={styles.filterSection}>
+            <Text style={styles.label}>Loại sản phẩm:</Text>
+            <TouchableOpacity
+              style={styles.typeButton}
+              onPress={() => setModalVisible(true)}>
+              <Text style={{color: theme.text}}>{tempFilters.type}</Text>
+            </TouchableOpacity>
+            <Modal
+              animationType="slide"
+              transparent
+              visible={modalVisible}
+              onRequestClose={() => setModalVisible(false)}>
+              <View style={styles.modalContainer}>
+                <View style={styles.modalContent}>
+                  <FlatList
+                    data={productTypes}
+                    keyExtractor={(item, index) => index.toString()}
+                    renderItem={({item}) => (
+                      <TouchableOpacity
+                        style={[
+                          styles.modalItem,
+                          tempFilters.type === item && styles.selectedSortItem,
+                        ]}
+                        onPress={() => {
+                          setTempFilters({...tempFilters, type: item});
+                          setModalVisible(false);
+                        }}>
+                        <Text
+                          style={[
+                            styles.modalItemText,
+                            tempFilters.type === item &&
+                              styles.selectedSortText,
+                          ]}>
+                          {item}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  />
+                </View>
+              </View>
+            </Modal>
+          </View>
+          <View style={styles.filterSection}>
+            <Text style={styles.label}>Khoảng giá:</Text>
+            <View style={styles.priceInputContainer}>
+              <TextInput
+                style={styles.priceInput}
+                placeholder="Từ"
+                placeholderTextColor={theme.text}
+                keyboardType="numeric"
+                value={tempFilters.minPrice}
+                onChangeText={text =>
+                  setTempFilters({...tempFilters, minPrice: text})
+                }
+              />
+              <Text style={styles.priceSeparator}>-</Text>
+              <TextInput
+                style={styles.priceInput}
+                placeholder="Đến"
+                placeholderTextColor={theme.text}
+                keyboardType="numeric"
+                value={tempFilters.maxPrice}
+                onChangeText={text =>
+                  setTempFilters({...tempFilters, maxPrice: text})
+                }
+              />
+            </View>
+          </View>
+        </>,
+      )}
+
+      {/* Modal cho sort */}
+      {renderModal(
+        'sort',
+        <View style={styles.filterSection}>
+          <Text style={styles.title}>Sắp xếp sản phẩm:</Text>
+          <FlatList
+            data={sortOptions}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={({item}) => (
+              <TouchableOpacity
+                style={[
+                  styles.modalItem,
+                  tempSort === item && styles.selectedSortItem,
+                ]}
+                onPress={() => setTempSort(item)}>
+                <Text
+                  style={[
+                    styles.modalItemText,
+                    tempSort === item && styles.selectedSortText,
+                  ]}>
+                  {item}
+                </Text>
+              </TouchableOpacity>
+            )}
+          />
+        </View>,
+      )}
+    </View>
   );
 };
 
-export default React.memo(SearchScreen);
+export default SearchScreen;

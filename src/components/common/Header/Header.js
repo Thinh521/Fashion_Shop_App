@@ -1,15 +1,19 @@
 import React from 'react';
 import {View, TouchableOpacity} from 'react-native';
-import {styles} from './Header.styles';
 import FastImage from 'react-native-fast-image';
 import {MenuIcon} from '../../../assets/icons/Icons';
 import Images from '../../../assets/images/Images';
+import {useTheme} from '../../../contexts/ThemeContext';
+import createStyles from './Header.styles';
 
 const Header = () => {
+  const {theme} = useTheme();
+  const styles = createStyles(theme);
+
   return (
     <View style={styles.header}>
       <TouchableOpacity style={styles.menuButton} activeOpacity={0.7}>
-        <MenuIcon width={24} height={24} />
+        <MenuIcon width={24} height={24} style={{color: theme.icon}} />
       </TouchableOpacity>
 
       <View style={styles.logoContainer}>

@@ -1,68 +1,52 @@
 import React, {useEffect, useState} from 'react';
-import {Text, View, TouchableOpacity, ScrollView} from 'react-native';
-import {Button, TextButton} from '../../components/ui/button/Button';
-import {CommonActions, useNavigation} from '@react-navigation/native';
+import {View, Text, ScrollView, TouchableOpacity} from 'react-native';
 import FastImage from 'react-native-fast-image';
-import styles from './Setting.styles';
+import createStyles from './Setting.styles';
 import commonStyles from '../../styles/commonStyles';
-import {EditIcon} from '../../assets/icons/Icons';
-import Input from '../../components/ui/input';
-import {
-  clearCurrentUser,
-  getAllUsers,
-  getCurrentUser,
-  saveAllUsers,
-  saveCurrentUser,
-} from '../../utils/storage';
 import Images from '../../assets/images/Images';
+import {
+  BinIcon,
+  BlogIcon,
+  ChatIcon,
+  DarkIcon,
+  DeliverIcon,
+  EditIcon,
+  EvaluateIcon,
+  LightIcon,
+  PaperIcon,
+  RightIcon_3,
+  SettingIcon,
+  ShopIcon,
+  SupportIcon,
+} from '../../assets/icons/Icons';
+import {Button} from '../../components/ui/button/Button';
+import {clearCurrentUser, getCurrentUser} from '../../utils/storage';
+import {CommonActions, useNavigation} from '@react-navigation/core';
+import CartIconHeader from '../../components/CartIcon/CartIcon';
+import {scale} from '../../utils/scaling';
+import {useTheme} from '../../contexts/ThemeContext';
+import {Colors} from '../../theme/theme';
+import LoadingOverlay from '../../components/lottie/LoadingOverlay';
 
 const SettingScreen = () => {
   const navigation = useNavigation();
-  const [userLocal, setUserLocal] = useState(null);
-  const [isEditing, setEditing] = useState(false);
-  const [formData, setFormData] = useState(null);
+  const [user, setUser] = useState(null);
+  const {theme, toggleTheme, isDarkMode} = useTheme();
+  const styles = createStyles(theme);
 
   useEffect(() => {
-    const loadUserFromStorage = async () => {
-      const user = await getCurrentUser();
-      if (user) {
-        setUserLocal(user);
-        setFormData(user);
+    const fetchUser = async () => {
+      const currentUser = await getCurrentUser();
+      if (currentUser) {
+        setUser(currentUser);
       }
     };
-
-    loadUserFromStorage();
+    fetchUser();
   }, []);
-
-  const handleChange = (field, value) => {
-    setFormData(prev => ({...prev, [field]: value}));
-  };
-
-  const handleAddressChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      address: {
-        ...prev.address,
-        [field]: value,
-      },
-    }));
-  };
-
-  const handleBankChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      bank: {
-        ...prev.bank,
-        [field]: value,
-      },
-    }));
-  };
 
   const handleLogout = async () => {
     await clearCurrentUser();
-    setUserLocal(null);
-    setFormData(null);
-
+    setUser(null);
     navigation.dispatch(
       CommonActions.reset({
         index: 0,
@@ -71,30 +55,67 @@ const SettingScreen = () => {
     );
   };
 
-  const handleSave = async () => {
-    setUserLocal(formData);
-    await saveCurrentUser(formData);
-
-    const allUsers = await getAllUsers();
-    const updatedUsers = allUsers.map(u =>
-      u.id === formData.id ? formData : u,
-    );
-    await saveAllUsers(updatedUsers);
-
-    setEditing(false);
+  const navigationToProfileEdit = () => {
+    navigation.navigate('NoBottomTab', {
+      screen: 'ProfileEdit',
+      params: {
+        user: user,
+      },
+    });
   };
 
-  if (!userLocal) {
-    return;
+  const NavigationToCart = () => {
+    navigation.navigate('NoBottomTab', {
+      screen: 'Cart',
+    });
+  };
+
+  const navigationToOrder = () => {
+    navigation.navigate('NoBottomTab', {
+      screen: 'Order',
+    });
+  };
+
+  if (!user) {
+    return <LoadingOverlay />;
   }
 
   return (
-    <View style={commonStyles.screenContainer}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <View style={{backgroundColor: theme.background, flex: 1}}>
+      <View style={styles.profileHeaderWrapper}>
+        <View style={[commonStyles.rowSpaceBetween, styles.profileHeader]}>
+          <View style={styles.profileShop}>
+            <ShopIcon style={styles.icon} />
+            <Text style={[styles.headerText, {color: theme.text}]}>
+              Bắt đầu bán
+            </Text>
+          </View>
+          <View style={[commonStyles.rowCenter, styles.profileHeaderRight]}>
+            <TouchableOpacity onPress={NavigationToCart}>
+              <CartIconHeader />
+            </TouchableOpacity>
+            <TouchableOpacity>
+              <SettingIcon width={20} style={styles.icon} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={toggleTheme}>
+              {isDarkMode ? (
+                <DarkIcon style={styles.icon} />
+              ) : (
+                <LightIcon style={styles.icon} />
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+
+      <ScrollView
+        style={{padding: scale(16), backgroundColor: theme.background}}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}>
         <View style={styles.profileContainer}>
-          <View style={styles.profileHeader}>
+          <View style={styles.profileInfo}>
             <View style={styles.avatarWrapper}>
-              <View style={styles.avatarCircle}>
+              <View style={[styles.avatarCircle, {borderColor: theme.border}]}>
                 <FastImage
                   style={styles.avatar}
                   source={Images.profile.avatar}
@@ -102,146 +123,180 @@ const SettingScreen = () => {
                 />
               </View>
               <TouchableOpacity
-                onPress={() => setEditing(prev => !prev)}
+                onPress={navigationToProfileEdit}
                 style={[commonStyles.rowCenter, styles.editIconWrapper]}>
-                <EditIcon />
+                <EditIcon fill={theme.icon} />
               </TouchableOpacity>
             </View>
-            <Text style={styles.profileName}>
-              {formData?.name || 'No Name'}
+            <Text style={[styles.profileName, {color: theme.text}]}>
+              {user?.name || 'No name'}
             </Text>
           </View>
 
-          {/* Personal Details */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Personal Details</Text>
+          <View style={{marginBottom: scale(20)}}>
+            <View
+              style={[commonStyles.rowSpaceBetween, {marginBottom: scale(15)}]}>
+              <Text style={[styles.profileTitle, {color: theme.text}]}>
+                Đơn mua
+              </Text>
+              <TouchableOpacity onPress={navigationToOrder}>
+                <Text style={{color: Colors.primary, fontWeight: '500'}}>
+                  Xem lịch sử mua
+                </Text>
+              </TouchableOpacity>
+            </View>
 
-            <Input
-              label="Name"
-              value={formData.name}
-              readonly={!isEditing}
-              onChangeText={text => handleChange('name', text)}
-              containerStyle={styles.inputContainer}
-            />
+            <View>
+              <View style={[commonStyles.rowSpaceBetween, {gap: scale(10)}]}>
+                <TouchableOpacity
+                  onPress={navigationToOrder}
+                  style={[
+                    styles.box,
+                    {backgroundColor: theme.card, borderColor: theme.border},
+                  ]}
+                  activeOpacity={0.7}>
+                  <PaperIcon style={styles.icon} />
+                  <Text
+                    style={[styles.label, {color: theme.text}]}
+                    numberOfLines={1}
+                    ellipsizeMode="tail">
+                    Chờ xác nhận
+                  </Text>
+                </TouchableOpacity>
 
-            <Input
-              label="Phone"
-              value={formData.phone}
-              readonly={!isEditing}
-              onChangeText={text => handleChange('phone', text)}
-              containerStyle={styles.inputContainer}
-            />
+                <TouchableOpacity
+                  style={[
+                    styles.box,
+                    {backgroundColor: theme.card, borderColor: theme.border},
+                  ]}
+                  activeOpacity={0.7}>
+                  <BinIcon style={styles.icon} />
+                  <Text
+                    style={[styles.label, {color: theme.text}]}
+                    numberOfLines={1}
+                    ellipsizeMode="tail">
+                    Chờ lấy hàng
+                  </Text>
+                </TouchableOpacity>
 
-            <Input
-              label="Email Address"
-              value={formData.email}
-              readonly
-              containerStyle={styles.inputContainer}
-            />
+                <TouchableOpacity
+                  style={[
+                    styles.box,
+                    {backgroundColor: theme.card, borderColor: theme.border},
+                  ]}
+                  activeOpacity={0.7}>
+                  <DeliverIcon style={styles.icon} />
+                  <Text
+                    style={[styles.label, {color: theme.text}]}
+                    numberOfLines={1}
+                    ellipsizeMode="tail">
+                    Giao hàng
+                  </Text>
+                </TouchableOpacity>
 
-            <Input
-              label="Password"
-              value={formData.password}
-              readonly
-              isPassword
-              containerStyle={styles.inputContainer}
-            />
-
-            <TextButton
-              text="Change Password"
-              containerStyle={styles.changePassword}
-              textStyle={styles.changePasswordText}
-            />
+                <TouchableOpacity
+                  style={[
+                    styles.box,
+                    {backgroundColor: theme.card, borderColor: theme.border},
+                  ]}
+                  activeOpacity={0.7}>
+                  <EvaluateIcon style={styles.icon} />
+                  <Text
+                    style={[styles.label, {color: theme.text}]}
+                    numberOfLines={1}
+                    ellipsizeMode="tail">
+                    Đánh giá
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
 
-          {/* Address */}
-          <View style={styles.section}>
-            <View style={styles.divider} />
-            <Text style={styles.sectionTitle}>Business Address Details</Text>
+          <View>
+            <Text
+              style={[
+                styles.profileTitle,
+                {color: theme.text, marginBottom: scale(15)},
+              ]}>
+              Hỗ trợ
+            </Text>
 
-            <Input
-              label="State"
-              value={formData.address?.state || ''}
-              readonly={!isEditing}
-              onChangeText={text => handleAddressChange('state', text)}
-              containerStyle={styles.inputContainer}
-            />
+            <View
+              style={[
+                styles.supportItemsContainer,
+                {backgroundColor: theme.card, borderColor: theme.border},
+              ]}>
+              <TouchableOpacity style={styles.supportItem}>
+                <View style={styles.itemContent}>
+                  <View
+                    style={[
+                      styles.iconContainer,
+                      {backgroundColor: theme.background},
+                    ]}>
+                    <SupportIcon
+                      width={scale(20)}
+                      height={scale(20)}
+                      style={styles.icon}
+                    />
+                  </View>
+                  <Text style={[styles.itemText, {color: theme.text}]}>
+                    Trung tâm trợ giúp
+                  </Text>
+                </View>
+                <RightIcon_3 style={styles.rightIcon} />
+              </TouchableOpacity>
 
-            <Input
-              label="Pincode"
-              value={formData.address?.pincode || ''}
-              readonly={!isEditing}
-              onChangeText={text => handleAddressChange('pincode', text)}
-              containerStyle={styles.inputContainer}
-            />
+              <TouchableOpacity style={styles.supportItem}>
+                <View style={styles.itemContent}>
+                  <View
+                    style={[
+                      styles.iconContainer,
+                      {backgroundColor: theme.background},
+                    ]}>
+                    <ChatIcon
+                      width={scale(20)}
+                      height={scale(20)}
+                      style={styles.icon}
+                    />
+                  </View>
+                  <Text style={[styles.itemText, {color: theme.text}]}>
+                    Trò chuyện với chúng tôi
+                  </Text>
+                </View>
+                <RightIcon_3 style={styles.rightIcon} />
+              </TouchableOpacity>
 
-            <Input
-              label="Address"
-              value={formData.address?.address || ''}
-              readonly={!isEditing}
-              onChangeText={text => handleAddressChange('address', text)}
-              containerStyle={styles.inputContainer}
-            />
-
-            <Input
-              label="City"
-              value={formData.address?.city || ''}
-              readonly={!isEditing}
-              onChangeText={text => handleAddressChange('city', text)}
-              containerStyle={styles.inputContainer}
-            />
-
-            <Input
-              label="Country"
-              value={formData.address?.country || ''}
-              readonly={!isEditing}
-              onChangeText={text => handleAddressChange('country', text)}
-              containerStyle={styles.inputContainer}
-            />
+              <TouchableOpacity style={[styles.supportItem, styles.lastItem]}>
+                <View style={styles.itemContent}>
+                  <View
+                    style={[
+                      styles.iconContainer,
+                      {backgroundColor: theme.background},
+                    ]}>
+                    <BlogIcon
+                      width={scale(20)}
+                      height={scale(20)}
+                      style={styles.icon}
+                    />
+                  </View>
+                  <Text style={[styles.itemText, {color: theme.text}]}>
+                    Bài viết
+                  </Text>
+                </View>
+                <RightIcon_3 style={styles.rightIcon} />
+              </TouchableOpacity>
+            </View>
           </View>
-
-          {/* Bank Info */}
-          <View style={styles.section}>
-            <View style={styles.divider} />
-            <Text style={styles.sectionTitle}>Bank Account Details</Text>
-
-            <Input
-              label="Bank Account Number"
-              value={formData.bank?.accountNumber || ''}
-              readonly={!isEditing}
-              onChangeText={text => handleBankChange('accountNumber', text)}
-              containerStyle={styles.inputContainer}
-            />
-
-            <Input
-              label="Account Holder's Name"
-              value={formData.bank?.accountHolder || ''}
-              readonly={!isEditing}
-              onChangeText={text => handleBankChange('accountHolder', text)}
-              containerStyle={styles.inputContainer}
-            />
-
-            <Input
-              label="IFSC Code"
-              value={formData.bank?.ifscCode || ''}
-              readonly={!isEditing}
-              onChangeText={text => handleBankChange('ifscCode', text)}
-              containerStyle={styles.inputContainer}
-            />
-          </View>
-
-          {isEditing && (
-            <Button
-              text="Save"
-              onPress={handleSave}
-              buttonStyle={styles.primaryButton}
-            />
-          )}
 
           <Button
             text="Logout"
+            width="100%"
             onPress={handleLogout}
-            buttonStyle={styles.primaryButton}
+            buttonStyle={[
+              styles.primaryButton,
+              {backgroundColor: Colors.primary},
+            ]}
+            textStyle={{color: '#FFFFFF', fontSize: 16, fontWeight: '600'}}
           />
         </View>
       </ScrollView>

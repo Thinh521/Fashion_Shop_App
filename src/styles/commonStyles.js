@@ -23,8 +23,8 @@ const commonStyles = StyleSheet.create({
   },
   rowSpaceBetween: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   fullWidth: {
     width: '100%',

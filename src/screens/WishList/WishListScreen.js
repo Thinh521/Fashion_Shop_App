@@ -1,4 +1,4 @@
-import React, {useCallback, useState} from 'react';
+import React, {useCallback, useMemo, useState} from 'react';
 import {View, Text, TouchableOpacity, ScrollView} from 'react-native';
 import {
   FilterIcon,
@@ -8,32 +8,57 @@ import {
   StartIcon,
   WishListIcon,
 } from '../../assets/icons/Icons';
-import styles from './WishList.styles';
 import Input from '../../components/ui/input';
 import commonStyles from '../../styles/commonStyles';
 import FastImage from 'react-native-fast-image';
 import {useFocusEffect, useNavigation} from '@react-navigation/core';
 import {getCurrentUser, getWishList} from '../../utils/storage';
+import createStyles from './WishList.styles';
+import LoadingOverlay from '../../components/lottie/LoadingOverlay';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const WishListScreen = () => {
+  const {theme} = useTheme();
+  const styles = createStyles(theme);
   const navigation = useNavigation();
+  const [error, setError] = useState(null);
   const [products, setProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useFocusEffect(
     useCallback(() => {
-      const currentUser = getCurrentUser();
-      if (currentUser) {
-        const wishlistData = getWishList(currentUser.id);
-        setProducts(wishlistData || []);
-      }
+      const loadWishList = async () => {
+        try {
+          setIsLoading(true);
+          setError(null);
+          const currentUser = await getCurrentUser();
+          if (currentUser) {
+            const wishlistData = await getWishList(currentUser.id);
+            setProducts(wishlistData || []);
+          } else {
+            setError('Please log in to view your wishlist');
+          }
+        } catch (err) {
+          setError('Failed to load wishlist');
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      loadWishList();
     }, []),
   );
 
-  const totalItems = products.length;
+  const totalItems = useMemo(() => products.length, [products]);
+
+  if (isLoading) {
+    return <LoadingOverlay />;
+  }
 
   return (
-    <View style={[commonStyles.screenContainer]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <View style={{backgroundColor: theme.background, flex: 1}}>
+      <ScrollView
+        style={styles.wishlistContainer}
+        showsVerticalScrollIndicator={false}>
         {/* Section Header */}
         <View style={styles.searchContainer}>
           <Input

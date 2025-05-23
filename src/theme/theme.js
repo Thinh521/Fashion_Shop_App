@@ -90,3 +90,19 @@ export const Shadows = {
     elevation: 10,
   },
 };
+
+export const lightTheme = {
+  mode: 'light',
+  background: '#FFFFFF',
+  text: '#000000',
+  primary: '#FF6347',
+  card: '#F3F3F3',
+};
+
+export const darkTheme = {
+  mode: 'dark',
+  background: '#000000',
+  text: '#FFFFFF',
+  primary: '#FF6347',
+  card: '#1E1E1E',
+};

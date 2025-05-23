@@ -146,3 +146,43 @@ export const getTotalCartQuantity = userId => {
 
   return uniqueVariantIds.size;
 };
+
+// ------------------------------------------------------------------------
+// Tạo key riêng cho từng order
+export const getOrderKey = userId => `order_${userId}`;
+
+// Save order
+export const saveOrder = (userId, orderItems) => {
+  const key = getOrderKey(userId);
+  storage.set(key, JSON.stringify(orderItems));
+};
+
+// Get order
+export const getOrder = userId => {
+  const key = getOrderKey(userId);
+  const data = storage.getString(key);
+  return data ? JSON.parse(data) : [];
+};
+
+// Add order
+export const addOrder = (userId, newOrder) => {
+  const orders = getOrder(userId);
+  const updated = [newOrder, ...orders];
+  saveOrder(userId, updated);
+};
+
+// Remove order
+export const removeOrder = (userId, orderId) => {
+  const orders = getOrder(userId);
+  const filtered = orders.filter(order => order.id !== orderId);
+  saveOrder(userId, filtered);
+};
+
+// update Order Status
+export const updateOrderStatus = (userId, orderId, newStatus) => {
+  const orders = getOrder(userId);
+  const updated = orders.map(order =>
+    order.id === orderId ? {...order, status: newStatus} : order,
+  );
+  saveOrder(userId, updated);
+};

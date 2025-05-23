@@ -1,6 +1,5 @@
 import React from 'react';
 import {View, Text, TouchableOpacity, ScrollView} from 'react-native';
-import styles from './HomeStyles';
 import Input from '../../components/ui/input';
 import {
   FilterIcon,
@@ -19,8 +18,12 @@ import TrendingProduct from './components/TrendingProduct';
 import BannerSummer from './components/BannerSummer';
 import BannerSponsored from './components/BannerSponsored';
 import {useNavigation} from '@react-navigation/core';
+import {useTheme} from '../../contexts/ThemeContext';
+import createStyles from './HomeStyles';
 
 const HomeScreen = () => {
+  const {theme} = useTheme();
+  const styles = createStyles(theme);
   const navigation = useNavigation();
 
   const navigationToShop = () => {
@@ -29,8 +32,10 @@ const HomeScreen = () => {
     });
   };
   return (
-    <View style={[commonStyles.screenContainer]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <View style={{backgroundColor: theme.background}}>
+      <ScrollView
+        style={styles.homeContainer}
+        showsVerticalScrollIndicator={false}>
         {/* Section Header */}
         <TouchableOpacity onPress={navigationToShop} activeOpacity={0.8}>
           <View style={styles.searchContainer} pointerEvents="none">

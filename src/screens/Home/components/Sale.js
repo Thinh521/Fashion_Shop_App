@@ -12,8 +12,12 @@ import {RightIcon} from '../../../assets/icons/Icons';
 import {Button} from '../../../components/ui/button/Button';
 import FastImage from 'react-native-fast-image';
 import Images from '../../../assets/images/Images';
+import {useTheme} from '../../../contexts/ThemeContext';
 
 const Sale = () => {
+  const {theme} = useTheme();
+  const styles = createStyles(theme);
+
   return (
     <View style={styles.saleContainer}>
       <View style={styles.saleImageContainer}>
@@ -51,67 +55,70 @@ const Sale = () => {
 
 export default Sale;
 
-const styles = StyleSheet.create({
-  saleContainer: {
-    flexDirection: 'row',
-    backgroundColor: Colors.white,
-    borderRadius: BorderRadius.r6,
-    marginBlockEnd: Spacing.s20,
-    ...Shadows.medium,
-  },
+const createStyles = theme =>
+  StyleSheet.create({
+    saleContainer: {
+      flexDirection: 'row',
+      backgroundColor: theme.card,
+      borderRadius: BorderRadius.r6,
+      marginBlockEnd: Spacing.s20,
+      ...Shadows.medium,
+    },
 
-  saleImageContainer: {
-    width: '40%',
-    aspectRatio: 1,
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+    saleImageContainer: {
+      width: '40%',
+      aspectRatio: 1,
+      position: 'relative',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
 
-  lineImage: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 10,
-  },
+    lineImage: {
+      position: 'absolute',
+      left: 0,
+      top: 0,
+      bottom: 0,
+      width: 10,
+    },
 
-  backgroundEffect: {
-    position: 'absolute',
-    left: -40,
-    width: '100%',
-    height: '95%',
-    zIndex: 1,
-  },
+    backgroundEffect: {
+      position: 'absolute',
+      left: -40,
+      width: '100%',
+      height: '95%',
+      zIndex: 1,
+    },
 
-  mainImage: {
-    width: '100%',
-    height: 108,
-    zIndex: 2,
-  },
+    mainImage: {
+      width: '100%',
+      height: 108,
+      zIndex: 2,
+    },
 
-  saleContent: {
-    width: '60%',
-    flexDirection: 'column',
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    paddingInlineEnd: Spacing.s15,
-  },
+    saleContent: {
+      width: '60%',
+      flexDirection: 'column',
+      alignItems: 'flex-end',
+      justifyContent: 'center',
+      paddingInlineEnd: Spacing.s15,
+    },
 
-  saleTitle: {
-    lineHeight: 20,
-    fontSize: FontSizes.regular,
-    fontWeight: FontWeights.medium,
-  },
+    saleTitle: {
+      color: theme.text,
+      lineHeight: 20,
+      fontSize: FontSizes.regular,
+      fontWeight: FontWeights.medium,
+    },
 
-  saleSubtitle: {
-    lineHeight: 20,
-    marginBlockEnd: Spacing.s10,
-    fontSize: FontSizes.xsmall,
-    fontWeight: FontWeights.regular,
-  },
+    saleSubtitle: {
+      color: theme.text,
+      lineHeight: 20,
+      marginBlockEnd: Spacing.s10,
+      fontSize: FontSizes.xsmall,
+      fontWeight: FontWeights.regular,
+    },
 
-  saleButton: {
-    alignSelf: 'flex-end',
-  },
-});
+    saleButton: {
+      alignSelf: 'flex-end',
+    },
+  });

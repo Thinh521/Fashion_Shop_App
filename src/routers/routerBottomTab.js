@@ -93,7 +93,7 @@ const routerBottomTab = [
     component: () => <PrivateTabScreen component={SettingScreen} />,
     label: 'Setting',
     Icon: SettingTabIcon,
-    hasLayout: true,
+    hasLayout: false,
     options: {
       headerTitle: 'Checkout',
       headerTitleAlign: 'center',

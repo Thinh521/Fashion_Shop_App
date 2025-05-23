@@ -5,6 +5,7 @@ import FastImage from 'react-native-fast-image';
 import Images from '../../../assets/images/Images';
 import {FontSizes, FontWeights} from '../../../theme/theme';
 import {scale} from '../../../utils/scaling';
+import {useTheme} from '../../../contexts/ThemeContext';
 
 const stories = [
   {
@@ -45,6 +46,9 @@ const stories = [
 ];
 
 const CategotiesList = () => {
+  const {theme} = useTheme();
+  const styles = createStyles(theme);
+
   return (
     <View>
       <View style={styles.categoriesWrapper}>
@@ -83,35 +87,37 @@ const CategotiesList = () => {
 
 export default CategotiesList;
 
-const styles = StyleSheet.create({
-  categoriesWrapper: {
-    marginBlockEnd: scale(20),
-  },
+const createStyles = theme =>
+  StyleSheet.create({
+    categoriesWrapper: {
+      marginBlockEnd: scale(20),
+    },
 
-  categoriesContainer: {
-    paddingVertical: scale(8),
-  },
+    categoriesContainer: {
+      paddingVertical: scale(8),
+    },
 
-  categoryItem: {
-    marginRight: scale(16),
-    alignItems: 'center',
-  },
+    categoryItem: {
+      marginRight: scale(16),
+      alignItems: 'center',
+    },
 
-  categoryImageContainer: {
-    width: scale(63),
-    height: scale(63),
-    borderRadius: 9999,
-    marginBottom: 8,
-  },
+    categoryImageContainer: {
+      width: scale(63),
+      height: scale(63),
+      borderRadius: 9999,
+      marginBottom: 8,
+    },
 
-  categoryImage: {
-    width: scale(63),
-    height: scale(63),
-  },
+    categoryImage: {
+      width: scale(63),
+      height: scale(63),
+    },
 
-  categoryText: {
-    textAlign: 'center',
-    fontSize: FontSizes.small,
-    fontWeight: FontWeights.regular,
-  },
-});
+    categoryText: {
+      color: theme.text,
+      textAlign: 'center',
+      fontSize: FontSizes.small,
+      fontWeight: FontWeights.regular,
+    },
+  });

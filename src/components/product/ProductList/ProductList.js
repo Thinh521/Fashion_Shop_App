@@ -1,13 +1,22 @@
-import React, {useCallback, useState, useMemo} from 'react';
+import React, {useCallback, useState, useMemo, useEffect} from 'react';
 import {Text, View, TouchableOpacity, ScrollView} from 'react-native';
-import styles from './ProductList.styles';
 import FastImage from 'react-native-fast-image';
 import {StartIcon, WishListIcon} from '../../../assets/icons/Icons';
 import {useNavigation, useFocusEffect} from '@react-navigation/core';
 import products from '../../../data/productData';
 import {getCurrentUser, getWishList} from '../../../utils/storage';
+import {useTheme} from '../../../contexts/ThemeContext';
+import createStyles from './ProductList.styles';
+import {scale} from '../../../utils/scaling';
 
-const ProductList = () => {
+const ProductList = ({
+  searchItem = '',
+  filters = {},
+  sort = 'Tất cả',
+  setTotalProduct = () => {},
+}) => {
+  const {theme} = useTheme();
+  const styles = createStyles(theme);
   const navigation = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
   const [wishlistedSet, setWishlistedSet] = useState(new Set());
@@ -15,7 +24,6 @@ const ProductList = () => {
   useFocusEffect(
     useCallback(() => {
       const loadData = async () => {
-        setIsLoading(true);
         try {
           const currentUser = await getCurrentUser();
           if (currentUser) {
@@ -26,27 +34,59 @@ const ProductList = () => {
           }
         } catch (error) {
           console.error('Lỗi load wishlist:', error);
-        } finally {
-          setIsLoading(false);
         }
       };
       loadData();
     }, []),
   );
 
-  const productList = useMemo(
-    () =>
-      products.map(item => ({
-        ...item,
-        isWishlisted: wishlistedSet.has(item.id),
-      })),
-    [products, wishlistedSet],
-  );
+  const productList = useMemo(() => {
+    const {type = 'Tất cả', minPrice = '', maxPrice = ''} = filters;
+    let filteredProducts = products.filter(item => {
+      const matchesSearch = item.productName
+        .toLowerCase()
+        .includes(searchItem.toLowerCase());
+      const matchesType = type === 'Tất cả' || item.category === type;
+      const price = parseFloat(item.price.replace(/[^\d]/g, '')) || 0;
+      const min = minPrice ? parseFloat(minPrice) : -Infinity;
+      const max = maxPrice ? parseFloat(maxPrice) : Infinity;
+      return matchesSearch && matchesType && price >= min && price <= max;
+    });
+
+    if (sort !== 'Tất cả') {
+      filteredProducts.sort((a, b) => {
+        const priceA = parseFloat(a.price.replace(/[^\d]/g, '')) || 0;
+        const priceB = parseFloat(b.price.replace(/[^\d]/g, '')) || 0;
+        if (sort === 'Tên A-Z')
+          return a.productName.localeCompare(b.productName);
+        if (sort === 'Tên Z-A')
+          return b.productName.localeCompare(a.productName);
+        if (sort === 'Giá thấp đến cao') return priceA - priceB;
+        if (sort === 'Giá cao đến thấp') return priceB - priceA;
+        return 0;
+      });
+    }
+
+    return filteredProducts.map(item => ({
+      ...item,
+      isWishlisted: wishlistedSet.has(item.id),
+    }));
+  }, [searchItem, filters, sort, wishlistedSet]);
+
+  useEffect(() => {
+    setTotalProduct(productList.length);
+  }, [productList, setTotalProduct]);
 
   return (
-    <View style={{flex: 1}}>
+    <View style={{backgroundColor: theme.background}}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.grid}>
+          {productList.length === 0 && (
+            <Text style={styles.noResultText}>
+              Không tìm thấy sản phẩm phù hợp
+            </Text>
+          )}
+
           {productList.map(item => (
             <TouchableOpacity
               key={item.id}

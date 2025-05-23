@@ -41,8 +41,6 @@ const styles = StyleSheet.create({
   dealContainer: {
     marginBlockEnd: scale(20),
     backgroundColor: '#4392F9',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
     borderRadius: 8,
   },
 

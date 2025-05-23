@@ -1,5 +1,5 @@
 import {ScrollView, Text, TouchableOpacity, View} from 'react-native';
-import React, {useCallback} from 'react';
+import React, {useState, useCallback, useEffect} from 'react';
 import {
   AddIcon,
   EditIcon_2,
@@ -8,147 +8,329 @@ import {
 } from '../../assets/icons/Icons';
 import commonStyles from '../../styles/commonStyles';
 import FastImage from 'react-native-fast-image';
-import styles from './Checkout.styles';
 import {useNavigation, useRoute} from '@react-navigation/core';
 import {Button} from '../../components/ui/button/Button';
+import {useTheme} from '../../contexts/ThemeContext';
+import createStyles from './Checkout.styles';
+import {getCurrentUser} from '../../utils/storage';
+import LoadingOverlay from '../../components/lottie/LoadingOverlay';
 
 const CheckoutScreen = () => {
-  const {product} = useRoute().params;
   const navigation = useNavigation();
+  const {product} = useRoute().params || {};
+  const {theme} = useTheme();
+  const styles = createStyles(theme);
 
-  const handlePlaceoder = () => {
+  const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const currentUser = await getCurrentUser();
+      if (currentUser) {
+        setUser(currentUser);
+      }
+      setIsLoading(false);
+    };
+    fetchUser();
+  }, []);
+
+  const handlePlaceOrder = useCallback(() => {
     navigation.navigate('NoBottomTab', {
       screen: 'Placeorder',
-      params: {product: product},
+      params: {product},
     });
-  };
+  }, [navigation, product]);
 
-  const handleShipping = () => {
+  const handleShipping = useCallback(() => {
+    const addressString = user.address
+      ? `${user.address.address}, ${user.address.city}, ${user.address.state}, ${user.address.country}, ${user.address.pincode}`
+      : 'N/A';
+
     navigation.navigate('NoBottomTab', {
       screen: 'Shipping',
+      params: {
+        order: {
+          product,
+          user,
+          address: addressString,
+          createdAt: new Date().toISOString(),
+        },
+      },
     });
-  };
+  }, [navigation, user, product]);
 
-  const renderProduct = (item, index = 0) => {
-    const price = parseFloat(item.price.replace('₹', ''));
-    const originalPrice = (price / (1 - item.discount / 100)).toFixed(0);
-    const imageSource =
-      typeof item.images[0] === 'string'
-        ? {uri: item.images[0]}
-        : item.images[0];
+  const handleMap = useCallback(() => {
+    navigation.navigate('NoBottomTab', {
+      screen: 'MapPicker',
+    });
+  }, [navigation]);
 
-    return (
-      <TouchableOpacity
-        key={item.id || index}
-        style={styles.itemContainer}
-        onPress={handlePlaceoder}>
-        <View style={[commonStyles.row, styles.productContainer]}>
-          <View>
-            <FastImage
-              source={imageSource}
-              style={styles.image}
-              resizeMode="cover"
-            />
-          </View>
+  const handleEdit = useCallback(() => {
+    navigation.navigate('NoBottomTab', {
+      screen: 'ProfileEdit',
+      params: {user},
+    });
+  }, [navigation, user]);
 
-          <View style={styles.detailsContainer}>
-            <Text style={styles.productName}>{item.productName}</Text>
+  const renderProduct = useCallback(
+    (item, index = 0) => {
+      const price = parseFloat(item.price.replace('₹', '') || 0);
+      const originalPrice = (price / (1 - item.discount / 100)).toFixed(0);
+      const imageSource =
+        typeof item.images[0] === 'string'
+          ? {uri: item.images[0]}
+          : item.images[0];
 
-            <View style={styles.variationsContainer}>
-              <Text style={styles.variationsLabel}>Sizes:</Text>
-              <View style={{flexDirection: 'row'}}>
-                {item.sizes?.map((size, i) => (
-                  <View key={i} style={styles.colorOption}>
-                    <Text style={styles.colorText}>{size}</Text>
+      return (
+        <TouchableOpacity
+          key={item.id || index}
+          style={styles.itemContainer}
+          onPress={handlePlaceOrder}>
+          <View style={[commonStyles.row, styles.productContainer]}>
+            <View>
+              <FastImage
+                source={imageSource}
+                style={styles.image}
+                resizeMode={FastImage.resizeMode.cover}
+                cache={FastImage.cacheControl.immutable}
+              />
+            </View>
+            <View style={styles.detailsContainer}>
+              <Text style={styles.productName}>{item.productName}</Text>
+              <View style={styles.variationsContainer}>
+                <Text style={styles.variationsLabel}>Color: </Text>
+                <View style={{flexDirection: 'row'}}>
+                  <View
+                    style={[
+                      styles.colorOption,
+                      {backgroundColor: item.selectedColor},
+                    ]}>
+                    <Text style={styles.colorText}>{item.colorName}</Text>
                   </View>
-                ))}
+                </View>
               </View>
-            </View>
-
-            <View style={styles.ratingContainer}>
-              <Text style={styles.ratingText}>
-                {item.rating?.average ?? 'N/A'}
-              </Text>
-              <View style={styles.stars}>
-                {[...Array(5)].map((_, i) => (
-                  <StartIcon key={i} style={styles.starIcon} />
-                ))}
+              <View style={styles.variationsContainer}>
+                <Text style={styles.variationsLabel}>Size: </Text>
+                <View style={{flexDirection: 'row'}}>
+                  <View style={styles.colorOption}>
+                    <Text style={styles.colorText}>{item.sizeName}</Text>
+                  </View>
+                </View>
               </View>
-            </View>
-
-            <View style={styles.priceContainer}>
-              <Text style={styles.currentPrice}>{item.price}</Text>
-              <View style={styles.discountContainer}>
-                <Text style={styles.discountText}>-{item.discount}%</Text>
-                <Text style={styles.originalPrice}>₹{originalPrice}</Text>
+              <View style={styles.variationsContainer}>
+                <Text style={styles.variationsLabel}>Quantity: </Text>
+                <Text style={styles.colorText}>{item.quantity}</Text>
+              </View>
+              <View style={styles.ratingContainer}>
+                <Text style={styles.ratingText}>
+                  {item.rating?.average ?? 'N/A'}
+                </Text>
+                <View style={styles.stars}>
+                  {[...Array(5)].map((_, i) => {
+                    const average = item.rating?.average || 0;
+                    const fillColor =
+                      i + 1 <= Math.floor(average)
+                        ? '#EDB310'
+                        : i + 1 === Math.ceil(average) &&
+                          !Number.isInteger(average)
+                        ? '#EDB31080'
+                        : '#ccc';
+                    return (
+                      <StartIcon
+                        key={i}
+                        fill={fillColor}
+                        style={styles.starIcon}
+                      />
+                    );
+                  })}
+                </View>
+              </View>
+              <View style={styles.priceContainer}>
+                <Text style={styles.currentPrice}>{item.price}</Text>
+                <View style={styles.discountContainer}>
+                  <Text style={styles.discountText}>-{item.discount}%</Text>
+                  <Text style={styles.originalPrice}>₹{originalPrice}</Text>
+                </View>
               </View>
             </View>
           </View>
-        </View>
+          <View style={styles.totalContainer}>
+            <Text style={styles.totalLabel}>
+              Total Order ({item.quantity}):
+            </Text>
+            <Text style={styles.totalPrice}>
+              ₹{(price * item.quantity).toFixed(0)}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      );
+    },
+    [handlePlaceOrder, styles],
+  );
 
-        <View style={styles.totalContainer}>
-          <Text style={styles.totalLabel}>Total Order (1):</Text>
-          <Text style={styles.totalPrice}>{item.price}</Text>
-        </View>
-      </TouchableOpacity>
-    );
-  };
+  if (!user) {
+    return <LoadingOverlay />;
+  }
 
   return (
-    <View style={[commonStyles.screenContainer, styles.background]}>
-      <View>
+    <View style={styles.background}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={[commonStyles.row, styles.header]}>
           <View style={styles.headerIconContainer}>
-            <LocationIcon_2 style={styles.locationIcon} />
+            <LocationIcon_2 style={{color: theme.icon}} />
           </View>
-          <Text style={styles.headerTitle}>Delivery Address</Text>
+          <Text style={styles.headerTitle}>Delivery Information</Text>
         </View>
 
-        {/* Address */}
+        {/* User Information */}
         <View style={styles.addressContainer}>
           <View style={styles.addressContent}>
             <View style={[commonStyles.rowSpaceBetween, styles.addressHeader]}>
-              <Text style={styles.label}>Address:</Text>
-              <View style={styles.addressEditIcon}>
-                <EditIcon_2 />
-              </View>
+              <Text style={styles.label}>User Information:</Text>
+              <TouchableOpacity onPress={handleEdit}>
+                <EditIcon_2 style={{color: theme.icon}} />
+              </TouchableOpacity>
             </View>
-            <Text style={styles.addressText}>
-              216 St Paul's Rd, London N1 2LL, UK
-              {'\n'}Contact: +44-784232
-            </Text>
+            <View>
+              <Text style={styles.inputLabel}>Name: {user.name || 'N/A'}</Text>
+            </View>
+            <View>
+              <Text style={styles.inputLabel}>
+                Phone: {user.phone || 'N/A'}
+              </Text>
+            </View>
+            <View>
+              <Text style={styles.inputLabel}>
+                Address:{' '}
+                {user.address
+                  ? `${user.address.address}, ${user.address.city}`
+                  : 'N/A'}
+              </Text>
+            </View>
+            {user.email && (
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Email: {user.email}</Text>
+              </View>
+            )}
           </View>
-          <View style={[commonStyles.rowCenter, styles.addressIconContainer]}>
-            <AddIcon />
-          </View>
+          <TouchableOpacity
+            onPress={handleMap}
+            style={[commonStyles.rowCenter, styles.addressIconContainer]}>
+            <AddIcon style={{color: theme.icon}} />
+          </TouchableOpacity>
         </View>
 
         {/* Shopping List */}
         <View style={styles.shopContainer}>
           <Text style={styles.title}>Shopping List</Text>
-
-          <ScrollView
-            style={styles.productsScrollView}
-            contentContainerStyle={styles.productsScrollContent}
-            showsVerticalScrollIndicator
-            indicatorStyle="black"
-            persistentScrollbar
-            scrollIndicatorInsets={{right: 1}}>
-            {/* Render sản phẩm */}
-            {product ? (
-              Array.isArray(product) ? (
-                product.map((item, index) => renderProduct(item, index))
-              ) : (
-                renderProduct(product)
-              )
+          <View style={styles.productsScrollContent}>
+            {isLoading ? (
+              <View style={styles.itemContainer}>
+                <View style={[commonStyles.row, styles.productContainer]}>
+                  <View
+                    style={[
+                      styles.image,
+                      {backgroundColor: theme.placeholder || '#e0e0e0'},
+                    ]}
+                  />
+                  <View style={styles.detailsContainer}>
+                    <View
+                      style={[
+                        styles.productName,
+                        {
+                          height: 20,
+                          backgroundColor: theme.placeholder || '#e0e0e0',
+                          marginBottom: 8,
+                        },
+                      ]}
+                    />
+                    <View style={styles.variationsContainer}>
+                      <View
+                        style={[
+                          styles.variationsLabel,
+                          {
+                            height: 16,
+                            width: 50,
+                            backgroundColor: theme.placeholder || '#e0e0e0',
+                          },
+                        ]}
+                      />
+                    </View>
+                    <View style={styles.ratingContainer}>
+                      <View
+                        style={[
+                          styles.ratingText,
+                          {
+                            height: 16,
+                            width: 40,
+                            backgroundColor: theme.placeholder || '#e0e0e0',
+                          },
+                        ]}
+                      />
+                      <View style={styles.stars}>
+                        {[...Array(5)].map((_, i) => (
+                          <View
+                            key={i}
+                            style={[
+                              styles.starIcon,
+                              {
+                                backgroundColor: theme.placeholder || '#e0e0e0',
+                                borderRadius: 4,
+                              },
+                            ]}
+                          />
+                        ))}
+                      </View>
+                    </View>
+                    <View style={styles.priceContainer}>
+                      <View
+                        style={[
+                          styles.currentPrice,
+                          {
+                            height: 20,
+                            width: 80,
+                            backgroundColor: theme.placeholder || '#e0e0e0',
+                          },
+                        ]}
+                      />
+                    </View>
+                  </View>
+                </View>
+                <View style={styles.totalContainer}>
+                  <View
+                    style={[
+                      styles.totalLabel,
+                      {
+                        height: 16,
+                        width: 100,
+                        backgroundColor: theme.placeholder || '#e0e0e0',
+                      },
+                    ]}
+                  />
+                  <View
+                    style={[
+                      styles.totalPrice,
+                      {
+                        height: 20,
+                        width: 80,
+                        backgroundColor: theme.placeholder || '#e0e0e0',
+                      },
+                    ]}
+                  />
+                </View>
+              </View>
+            ) : product ? (
+              renderProduct(product)
             ) : (
               <Text style={{textAlign: 'center', padding: 20, color: 'gray'}}>
                 Không có sản phẩm để hiển thị
               </Text>
             )}
-          </ScrollView>
-
+          </View>
           <Button
             text="Proceed to Payment"
             onPress={handleShipping}
@@ -158,9 +340,9 @@ const CheckoutScreen = () => {
             textStyle={{fontSize: 17, fontWeight: '600'}}
           />
         </View>
-      </View>
+      </ScrollView>
     </View>
   );
 };
 
-export default CheckoutScreen;
+export default React.memo(CheckoutScreen);

@@ -1,84 +1,198 @@
-import React, {useState} from 'react';
-import {Text, View, StyleSheet} from 'react-native';
+import React, {useCallback, useState} from 'react';
+import {Text, View, StyleSheet, Alert, ScrollView} from 'react-native';
 import FastImage from 'react-native-fast-image';
 import {Button} from '../../components/ui/button/Button';
 import SuccessModal from '../../components/ui/modal/SuccessModal';
 import Images from '../../assets/images/Images';
+import {useNavigation, useRoute} from '@react-navigation/core';
+import {useTheme} from '../../contexts/ThemeContext';
+import {getOrder, saveOrder} from '../../utils/storage';
 
 const ShippingScreen = () => {
+  const {theme} = useTheme();
+  const navigation = useNavigation();
+  const {order} = useRoute().params || {};
   const [isModalVisible, setIsModalVisible] = useState(false);
 
-  const handlePayment = () => {
-    setIsModalVisible(true);
+  const handleConfirmOrder = useCallback(() => {
+    if (!order?.product || !order?.address || !order?.user) {
+      Alert.alert('Lỗi', 'Thông tin đơn hàng không đầy đủ.');
+      return;
+    }
 
+    // Lưu đơn hàng vào MMKV
+    const orderId = `order_${Date.now()}`;
+    const orderData = {
+      id: orderId,
+      user: order.user,
+      product: order.product,
+      address: order.address,
+      createdAt: order.createdAt,
+      status: 'pending',
+    };
+
+    try {
+      const existingOrders = getOrder(order.user.id);
+      const updatedOrders = [orderData, ...existingOrders];
+      saveOrder(order.user.id, updatedOrders);
+
+      setIsModalVisible(true);
+      setTimeout(() => {
+        setIsModalVisible(false);
+        navigation.navigate('MainTabNavigator', {
+          screen: 'Home',
+        });
+      }, 2000);
+    } catch (error) {
+      console.error('Lỗi lưu đơn hàng:', error);
+      Alert.alert('Lỗi', 'Không thể lưu đơn hàng. Vui lòng thử lại.');
+    }
+  }, [navigation, order]);
+
+  const handlePayment = useCallback(() => {
+    setIsModalVisible(true);
     setTimeout(() => {
       setIsModalVisible(false);
     }, 2000);
-  };
+  }, []);
+
+  // Tính giá động
+  const orderPrice = order?.product
+    ? parseFloat(order.product.price.replace('₹', '') || 0) *
+      (order.product.quantity || 1)
+    : 0;
+  const shippingFee = 30;
+  const totalPrice = orderPrice + shippingFee;
 
   return (
-    <View style={styles.screenContainer}>
+    <View style={{backgroundColor: theme.background}}>
       {/* Order Summary Section */}
-      <View style={styles.sectionContainer}>
-        <View style={styles.row}>
-          <Text style={styles.label}>Order</Text>
-          <Text style={styles.value}>₹7,000</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Shipping</Text>
-          <Text style={styles.value}>₹30</Text>
-        </View>
-        <View style={[styles.row, styles.totalRow]}>
-          <Text style={styles.totalLabel}>Total</Text>
-          <Text style={styles.totalValue}>₹7,030</Text>
-        </View>
-      </View>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={{padding: 16}}>
+          <View
+            style={[styles.sectionContainer, {backgroundColor: theme.card}]}>
+            <Text style={[styles.sectionTitle, {color: theme.text}]}>
+              Order Summary
+            </Text>
+            <View style={styles.row}>
+              <Text style={[styles.label, {color: theme.text}]}>Order</Text>
+              <Text style={[styles.value, {color: theme.text}]}>
+                ₹{orderPrice.toFixed(0)}
+              </Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={[styles.label, {color: theme.text}]}>Shipping</Text>
+              <Text style={[styles.value, {color: theme.text}]}>
+                ₹{shippingFee}
+              </Text>
+            </View>
+            <View style={[styles.row, styles.totalRow]}>
+              <Text style={[styles.totalLabel, {color: theme.text}]}>
+                Total
+              </Text>
+              <Text style={[styles.totalValue, {color: theme.text}]}>
+                ₹{totalPrice.toFixed(0)}
+              </Text>
+            </View>
 
-      <View style={styles.divider} />
-
-      {/* Payment Methods Section */}
-      <View style={styles.sectionContainer}>
-        <Text style={styles.sectionTitle}>Payment</Text>
-
-        {['visa', 'paypal', 'master', 'applepay'].map(method => (
-          <View key={method} style={styles.paymentMethod}>
-            <FastImage
-              source={Images.common[method]}
-              style={styles.paymentIcon}
-              resizeMode="contain"
-            />
-            <Text style={styles.cardNumber}>•••• •••• •••• 2109</Text>
+            <Text
+              style={[styles.sectionTitle, {color: theme.text, marginTop: 20}]}>
+              Order Details
+            </Text>
+            <View style={{marginBottom: 20}}>
+              <Text style={[styles.infoText, {color: theme.text}]}>
+                Product: {order?.product?.productName || 'N/A'}
+              </Text>
+              <Text style={[styles.infoText, {color: theme.text}]}>
+                Color: {order?.product?.colorName || 'N/A'}
+              </Text>
+              <Text style={[styles.infoText, {color: theme.text}]}>
+                Size: {order?.product?.sizeName || 'N/A'}
+              </Text>
+              <Text style={[styles.infoText, {color: theme.text}]}>
+                Quantity: {order?.product?.quantity || 'N/A'}
+              </Text>
+              <Text style={[styles.infoText, {color: theme.text}]}>
+                Price: {order?.product?.price || 'N/A'}
+              </Text>
+              <Text style={[styles.infoText, {color: theme.text}]}>
+                Address: {order?.address || 'N/A'}
+              </Text>
+              <Text style={[styles.infoText, {color: theme.text}]}>
+                Name: {order?.user?.name || 'N/A'}
+              </Text>
+              <Text style={[styles.infoText, {color: theme.text}]}>
+                Phone: {order?.user?.phone || 'N/A'}
+              </Text>
+              {order?.user?.email && (
+                <Text style={[styles.infoText, {color: theme.text}]}>
+                  Email: {order?.user?.email}
+                </Text>
+              )}
+            </View>
           </View>
-        ))}
-      </View>
 
-      <Button
-        text="Continue"
-        onPress={handlePayment}
-        buttonStyle={styles.continueButton}
-        textStyle={styles.continueButtonText}
-      />
+          <View style={[styles.divider, {backgroundColor: theme.border}]} />
 
-      <SuccessModal
-        visible={isModalVisible}
-        message="Payment done successfully."
-        onClose={() => setIsModalVisible(false)}
-      />
+          {/* Payment Methods Section */}
+          <View
+            style={[styles.sectionContainer, {backgroundColor: theme.card}]}>
+            <Text style={[styles.sectionTitle, {color: theme.text}]}>
+              Payment Methods
+            </Text>
+            {['visa', 'paypal', 'master', 'applepay'].map(method => (
+              <View
+                key={method}
+                style={[
+                  styles.paymentMethod,
+                  {borderBottomColor: theme.border},
+                ]}>
+                <FastImage
+                  source={Images.common[method]}
+                  style={styles.paymentIcon}
+                  resizeMode="contain"
+                />
+                <Text style={[styles.cardNumber, {color: theme.text}]}>
+                  •••• •••• •••• 2109
+                </Text>
+              </View>
+            ))}
+          </View>
+
+          <Button
+            text="Pay Now"
+            onPress={handlePayment}
+            buttonStyle={[styles.continueButton, {backgroundColor: '#F83758'}]}
+            textStyle={[styles.continueButtonText, {color: theme.text}]}
+          />
+          <Button
+            text="Confirm Order"
+            onPress={handleConfirmOrder}
+            buttonStyle={[styles.continueButton, {backgroundColor: '#2a52be'}]}
+            textStyle={[styles.continueButtonText, {color: theme.text}]}
+          />
+
+          <SuccessModal
+            visible={isModalVisible}
+            message="Order confirmed successfully."
+            onClose={() => setIsModalVisible(false)}
+          />
+        </View>
+      </ScrollView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  screenContainer: {
-    flex: 1,
-    backgroundColor: '#f8f8f8',
-    padding: 16,
-  },
   sectionContainer: {
-    backgroundColor: 'white',
     borderRadius: 8,
     padding: 16,
     marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 12,
   },
   row: {
     flexDirection: 'row',
@@ -87,7 +201,6 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    color: '#666',
   },
   value: {
     fontSize: 14,
@@ -106,17 +219,10 @@ const styles = StyleSheet.create({
   totalValue: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#2a52be',
   },
   divider: {
     height: 1,
-    backgroundColor: '#eee',
     marginVertical: 16,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 12,
   },
   paymentMethod: {
     flexDirection: 'row',
@@ -124,7 +230,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   paymentIcon: {
     width: 40,
@@ -133,17 +238,18 @@ const styles = StyleSheet.create({
   },
   cardNumber: {
     fontSize: 14,
-    color: '#666',
   },
-
+  infoText: {
+    fontSize: 16,
+    marginBottom: 4,
+  },
   continueButton: {
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 24,
+    marginTop: 12,
     width: '100%',
   },
-
   continueButtonText: {
     fontSize: 16,
     fontWeight: 'bold',

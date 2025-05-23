@@ -2,7 +2,7 @@ import {TouchableOpacity} from 'react-native';
 import LoginScreen from '../screens/Auth/Login';
 import RegisterScreen from '../screens/Auth/Register';
 import CheckoutScreen from '../screens/Checkout';
-import {LeftIcon, WishListIcon} from '../assets/icons/Icons';
+import {WishListIcon} from '../assets/icons/Icons';
 import PlaceoderScreen from '../screens/Placeoder';
 import ShippingScreen from '../screens/Shipping';
 import ProductDetailScreen from '../screens/ProductDetail/ProductDetailScreen';
@@ -10,6 +10,10 @@ import ForgotPasswordScreen from '../screens/Auth/ForgotPassword';
 import Onboarding from '../screens/Onboarding';
 import LoginRequiredScreen from '../screens/Auth/Login/LoginRequiredScreen';
 import CartIconHeader from '../components/CartIcon/CartIcon';
+import ProfileEditScreen from '../screens/Setting/ProfileEditScreen';
+import CartScreen from '../screens/Cart';
+import MapPickerScreen from '../screens/MapPicker/MapPickerScreen';
+import OrderScreen from '../screens/order/orderScreen';
 
 const routerNoBottomTab = [
   {
@@ -53,35 +57,21 @@ const routerNoBottomTab = [
   {
     name: 'Checkout',
     component: CheckoutScreen,
-    options: ({navigation}) => ({
+    options: () => ({
       title: 'Checkout',
       headerTitle: 'Checkout',
       headerTitleAlign: 'center',
       headerBackTitleVisible: false,
-      headerLeft: () => (
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={{marginLeft: 16}}>
-          <LeftIcon />
-        </TouchableOpacity>
-      ),
     }),
   },
   {
     name: 'Placeorder',
     component: PlaceoderScreen,
-    options: ({navigation}) => ({
+    options: () => ({
       title: 'Placeorder',
       headerTitle: 'Shopping Bag',
       headerTitleAlign: 'center',
       headerBackTitleVisible: false,
-      headerLeft: () => (
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={{marginLeft: 16}}>
-          <LeftIcon />
-        </TouchableOpacity>
-      ),
       headerRight: () => (
         <TouchableOpacity style={{marginRight: 16}}>
           <WishListIcon fill="black" />
@@ -92,18 +82,11 @@ const routerNoBottomTab = [
   {
     name: 'Shipping',
     component: ShippingScreen,
-    options: ({navigation}) => ({
+    options: () => ({
       title: 'Shipping',
       headerTitle: 'Checkout',
       headerTitleAlign: 'center',
       headerBackTitleVisible: false,
-      headerLeft: () => (
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={{marginLeft: 16}}>
-          <LeftIcon />
-        </TouchableOpacity>
-      ),
     }),
   },
   {
@@ -111,25 +94,63 @@ const routerNoBottomTab = [
     component: ProductDetailScreen,
     options: ({navigation}) => ({
       title: 'ProductDetail',
-      headerTitle: ' ',
+      headerTitle: 'Product Detail',
       headerTitleAlign: 'center',
       headerBackTitleVisible: false,
-      headerLeft: () => (
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={{marginLeft: 16}}>
-          <LeftIcon />
-        </TouchableOpacity>
-      ),
       headerRight: () => (
         <TouchableOpacity
-          onPress={() =>
-            navigation.navigate('MainTabNavigator', {screen: 'Search'})
-          }
+          onPress={() => navigation.navigate('NoBottomTab', {screen: 'Cart'})}
           style={{paddingRight: 25, paddingTop: 10}}>
           <CartIconHeader />
         </TouchableOpacity>
       ),
+    }),
+  },
+  {
+    name: 'Cart',
+    component: CartScreen,
+    options: ({navigation}) => ({
+      title: 'Cart',
+      headerTitle: ' ',
+      headerTitleAlign: 'center',
+      headerBackTitleVisible: false,
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={() => navigation.navigate('NoBottomTab', {screen: 'Cart'})}
+          style={{paddingRight: 25, paddingTop: 10}}>
+          <CartIconHeader />
+        </TouchableOpacity>
+      ),
+    }),
+  },
+  {
+    name: 'ProfileEdit',
+    component: ProfileEditScreen,
+    options: () => ({
+      title: 'ProfileEdit',
+      headerTitle: 'Profile Info',
+      headerTitleAlign: 'center',
+      headerBackTitleVisible: false,
+    }),
+  },
+  {
+    name: 'MapPicker',
+    component: MapPickerScreen,
+    options: ({navigation}) => ({
+      title: 'MapPicker',
+      headerTitle: 'Map',
+      headerTitleAlign: 'center',
+      headerBackTitleVisible: false,
+    }),
+  },
+  {
+    name: 'Order',
+    component: OrderScreen,
+    options: ({navigation}) => ({
+      title: 'Order',
+      headerTitle: 'Order',
+      headerTitleAlign: 'center',
+      headerBackTitleVisible: false,
     }),
   },
 ];

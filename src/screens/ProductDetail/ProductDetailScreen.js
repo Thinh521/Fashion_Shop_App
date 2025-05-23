@@ -10,7 +10,6 @@ import {
   Alert,
   TextInput,
 } from 'react-native';
-import styles from './ProductDetailStyles';
 import commonStyles from '../../styles/commonStyles';
 import {
   useFocusEffect,
@@ -40,18 +39,21 @@ import {
 import {showMessage} from 'react-native-flash-message';
 import {IconButton} from '../../components/ui/button/Button';
 import LottieView from 'lottie-react-native';
+import {useTheme} from '../../contexts/ThemeContext';
+import createStyles from './ProductDetailStyles';
 
 const {width} = Dimensions.get('window');
 const IMAGE_WIDTH = width;
 const IMAGE_HEIGHT = 300;
 
 const ProductDetailScreen = item => {
-  const {
-    params: {product},
-  } = useRoute();
+  const {product} = useRoute().params;
 
   const flatListRef = useRef(null);
   const navigation = useNavigation();
+
+  const {theme} = useTheme();
+  const styles = createStyles(theme);
 
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
@@ -168,6 +170,41 @@ const ProductDetailScreen = item => {
     };
 
     addToCart(userId, cartItem);
+  };
+
+  const handleBuyNow = () => {
+    if (!userId) {
+      Alert.alert('Thông báo', 'Bạn cần đăng nhập để mua hàng');
+      return;
+    }
+    if (!selectedColor || !selectedSize) {
+      Alert.alert(
+        'Chọn phân loại',
+        'Vui lòng chọn màu sắc và kích thước trước khi mua',
+      );
+      return;
+    }
+    const stock = product.variants?.[selectedColor]?.[selectedSize] || 0;
+    if (stock < 1) {
+      Alert.alert('Hết hàng', 'Sản phẩm bạn chọn đã hết hàng');
+      return;
+    }
+    const cartItem = {
+      ...product,
+      selectedColor,
+      selectedSize,
+      quantity: Math.min(quantity, stock),
+      availableStock: stock,
+      addedAt: new Date().toISOString(),
+      colorName: selectedColor,
+      sizeName: selectedSize,
+      variantPrice: product.price,
+      variantId: `${product.id}_${selectedColor}_${selectedSize}_${Date.now()}`,
+    };
+    navigation.navigate('NoBottomTab', {
+      screen: 'Checkout',
+      params: {product: cartItem},
+    });
   };
 
   const checkWishlistStatus = () => {
@@ -517,8 +554,8 @@ const ProductDetailScreen = item => {
                 />
               </View>
               <View style={styles.availableContainer}>
-                <Text>Available: </Text>
-                <Text>{totalStock}</Text>
+                <Text style={{color: theme.text}}>Available: </Text>
+                <Text style={{color: theme.text}}>{totalStock}</Text>
               </View>
             </View>
           </View>
@@ -565,12 +602,7 @@ const ProductDetailScreen = item => {
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={() =>
-            navigation.navigate('NoBottomTab', {
-              screen: 'Checkout',
-              params: {product: product},
-            })
-          }
+          onPress={handleBuyNow}
           style={[
             commonStyles.rowCenter,
             styles.footerButton,

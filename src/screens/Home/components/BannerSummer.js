@@ -7,8 +7,11 @@ import {Button} from '../../../components/ui/button/Button';
 import {RightIcon} from '../../../assets/icons/Icons';
 import {Colors, FontSizes, FontWeights, Shadows} from '../../../theme/theme';
 import {isTablet, scale} from '../../../utils/scaling';
+import {useTheme} from '../../../contexts/ThemeContext';
 
 const BannerSummer = () => {
+  const {theme} = useTheme();
+  const styles = createStyles(theme);
   const {height} = useWindowDimensions();
   const bannerHeight = isTablet ? height * 0.5 : height * 0.2;
 
@@ -37,42 +40,45 @@ const BannerSummer = () => {
 
 export default React.memo(BannerSummer);
 
-const styles = StyleSheet.create({
-  summerContainer: {
-    flexDirection: 'column',
-    backgroundColor: Colors.white,
-    borderRadius: 6,
-    marginVertical: scale(20),
-    overflow: 'hidden',
-    ...Shadows.medium,
-  },
+const createStyles = theme =>
+  StyleSheet.create({
+    summerContainer: {
+      flexDirection: 'column',
+      backgroundColor: theme.card,
+      borderRadius: 6,
+      marginVertical: scale(20),
+      overflow: 'hidden',
+      ...Shadows.medium,
+    },
 
-  summerImage: {
-    width: '100%',
-    borderTopLeftRadius: 6,
-    borderTopRightRadius: 6,
-  },
+    summerImage: {
+      width: '100%',
+      borderTopLeftRadius: 6,
+      borderTopRightRadius: 6,
+    },
 
-  summerContent: {
-    padding: scale(20),
-  },
+    summerContent: {
+      padding: scale(20),
+    },
 
-  summerBox: {
-    flexDirection: 'column',
-  },
+    summerBox: {
+      flexDirection: 'column',
+    },
 
-  summerTitle: {
-    marginBottom: scale(2),
-    fontSize: FontSizes.large,
-    fontWeight: FontWeights.medium,
-  },
+    summerTitle: {
+      color: theme.text,
+      marginBottom: scale(2),
+      fontSize: FontSizes.large,
+      fontWeight: FontWeights.medium,
+    },
 
-  summerDescription: {
-    fontSize: FontSizes.regular,
-    fontWeight: FontWeights.regular,
-  },
+    summerDescription: {
+      color: theme.text,
+      fontSize: FontSizes.regular,
+      fontWeight: FontWeights.regular,
+    },
 
-  summerButton: {
-    alignSelf: 'center',
-  },
-});
+    summerButton: {
+      alignSelf: 'center',
+    },
+  });

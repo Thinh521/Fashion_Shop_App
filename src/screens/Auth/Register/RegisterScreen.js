@@ -15,9 +15,7 @@ import {LockIcon, MailIcon} from '../../../assets/icons/Icons';
 import {
   addUser,
   getAllUsers,
-  getUser,
   saveCurrentUser,
-  saveUser,
 } from '../../../utils/storage';
 
 const RegisterScreen = () => {

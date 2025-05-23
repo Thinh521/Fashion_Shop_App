@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useRef, useCallback} from 'react';
 import {
   View,
   Animated,
@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {CommonActions} from '@react-navigation/native';
-import {FontSizes, FontWeights} from '../../theme/theme';
+import {FontSizes, FontWeights, Shadows} from '../../theme/theme';
+import {useTheme} from '../../contexts/ThemeContext';
 
 const CustomTabBar = ({state, descriptors, navigation, config = {}}) => {
   const insets = useSafeAreaInsets();
@@ -18,109 +19,95 @@ const CustomTabBar = ({state, descriptors, navigation, config = {}}) => {
   const iconScales = useRef(
     state.routes.map(() => new Animated.Value(1)),
   ).current;
-
-  const [layoutHeight, setLayoutHeight] = useState(0);
-  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
-  const [pointerEventsEnabled, setPointerEventsEnabled] = useState(true);
+  const {theme} = useTheme();
 
   const {
-    activeColor = '#F83758',
-    inactiveColor = '#000000',
-    backgroundColor = '#FFFFFF',
-    centerActiveColor = '#F83758',
-    centerInactiveColor = '#FFFFFF',
-    borderColor = '#E0E0E0',
+    activeColor = theme.primary,
+    inactiveColor = theme.text,
+    backgroundColor = theme.background,
+    centerActiveColor = theme.primary,
+    centerInactiveColor = theme.card,
+    borderColor = theme.border,
     tabHeight = 76,
     centerButtonSize = 60,
     iconSize = 24,
     iconAnimationScale = 1.3,
-    visibilityAnimationDuration = 300,
-    shadowOpacity = 0.1,
-    shadowRadius = 8,
-    elevation = 5,
-    tabBarPosition = 'bottom',
+    animationDuration = 200,
     hideOnKeyboard = true,
     onPress = () => {},
     onLongPress = () => {},
   } = config;
 
-  const handleTabChange = newIndex => {
-    const animations = state.routes.map((_, index) => {
-      const toValue = index === newIndex ? iconAnimationScale : 1;
-      return Animated.timing(iconScales[index], {
-        toValue,
-        duration: 150,
+  const animateIcons = useCallback(
+    newIndex => {
+      const animations = iconScales.map((scale, index) =>
+        Animated.timing(scale, {
+          toValue: index === newIndex ? iconAnimationScale : 1,
+          duration: animationDuration,
+          useNativeDriver: true,
+        }),
+      );
+      Animated.parallel(animations).start();
+    },
+    [iconAnimationScale, iconScales, animationDuration],
+  );
+
+  const handlePressIn = useCallback(
+    index => {
+      Animated.timing(iconScales[index], {
+        toValue: iconAnimationScale * 1.1,
+        duration: animationDuration / 1.5,
         useNativeDriver: true,
-      });
-    });
+      }).start();
+    },
+    [iconAnimationScale, iconScales, animationDuration],
+  );
 
-    Animated.parallel(animations).start();
-  };
-
-  // Hiệu ứng khi nhấn vào tab
-  const handlePressIn = index => {
-    Animated.timing(iconScales[index], {
-      toValue: iconAnimationScale * 1.1,
-      duration: 100, // Nhanh hơn khi nhấn
-      useNativeDriver: true,
-    }).start();
-  };
-
-  // Hiệu ứng khi thả ra
-  const handlePressOut = (index, isFocused) => {
-    Animated.timing(iconScales[index], {
-      toValue: isFocused ? iconAnimationScale : 1,
-      duration: 150,
-      useNativeDriver: true,
-    }).start();
-  };
+  const handlePressOut = useCallback(
+    (index, isFocused) => {
+      Animated.timing(iconScales[index], {
+        toValue: isFocused ? iconAnimationScale : 1,
+        duration: animationDuration,
+        useNativeDriver: true,
+      }).start();
+    },
+    [iconAnimationScale, iconScales, animationDuration],
+  );
 
   useEffect(() => {
-    handleTabChange(state.index);
-  }, [state.index]);
+    animateIcons(state.index);
+  }, [state.index, animateIcons]);
 
   useEffect(() => {
-    const show =
+    if (!hideOnKeyboard) return;
+
+    const showEvent =
       Platform.OS === 'android' ? 'keyboardDidShow' : 'keyboardWillShow';
-    const hide =
+    const hideEvent =
       Platform.OS === 'android' ? 'keyboardDidHide' : 'keyboardWillHide';
 
-    const showListener = Keyboard.addListener(show, () =>
-      setKeyboardVisible(true),
+    const showListener = Keyboard.addListener(showEvent, () =>
+      Animated.timing(visible, {
+        toValue: 0,
+        duration: animationDuration * 2,
+        useNativeDriver: true,
+      }).start(),
     );
-    const hideListener = Keyboard.addListener(hide, () =>
-      setKeyboardVisible(false),
+    const hideListener = Keyboard.addListener(hideEvent, () =>
+      Animated.timing(visible, {
+        toValue: 1,
+        duration: animationDuration * 2,
+        useNativeDriver: true,
+      }).start(),
     );
 
     return () => {
       showListener.remove();
       hideListener.remove();
     };
-  }, []);
+  }, [hideOnKeyboard, animationDuration]);
 
-  useEffect(() => {
-    const toValue = hideOnKeyboard && isKeyboardVisible ? 0 : 1;
-
-    Animated.timing(visible, {
-      toValue,
-      duration: visibilityAnimationDuration,
-      useNativeDriver: true,
-    }).start(({finished}) => {
-      if (finished) {
-        setPointerEventsEnabled(toValue === 1);
-      }
-    });
-  }, [isKeyboardVisible, hideOnKeyboard]);
-
-  const handleLayout = e => {
-    const {height} = e.nativeEvent.layout;
-    if (height !== layoutHeight) {
-      setLayoutHeight(height);
-    }
-  };
-
-  const tabBarHeight =
-    tabHeight + (tabBarPosition === 'top' ? insets.top : insets.bottom);
+  const tabBarHeight = tabHeight + insets.bottom;
 
   const styles = StyleSheet.create({
     container: {
@@ -130,26 +117,20 @@ const CustomTabBar = ({state, descriptors, navigation, config = {}}) => {
       bottom: 0,
       height: tabBarHeight,
       backgroundColor,
-      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopWidth: 0.5,
       borderTopColor: borderColor,
-      shadowColor: '#000',
-      shadowOffset: {width: 0, height: -2},
-      shadowOpacity,
-      shadowRadius,
-      elevation,
-      paddingBottom: insets.bottom,
+      ...Shadows.medium,
       transform: [
         {
           translateY: visible.interpolate({
             inputRange: [0, 1],
-            outputRange: [layoutHeight + insets.bottom, 0],
+            outputRange: [tabBarHeight, 0],
           }),
         },
       ],
     },
     content: {
       flexDirection: 'row',
-      justifyContent: 'space-around',
       alignItems: 'center',
       flex: 1,
     },
@@ -161,7 +142,7 @@ const CustomTabBar = ({state, descriptors, navigation, config = {}}) => {
     },
     tabLabel: {
       marginTop: 4,
-      fontSize: FontSizes.small,
+      fontSize: FontSizes.xsmall,
       fontWeight: FontWeights.medium,
       color: inactiveColor,
     },
@@ -175,52 +156,54 @@ const CustomTabBar = ({state, descriptors, navigation, config = {}}) => {
       width: centerButtonSize,
       height: centerButtonSize,
       borderRadius: centerButtonSize / 2,
-      backgroundColor: centerInactiveColor,
       justifyContent: 'center',
       alignItems: 'center',
-      shadowColor: '#000',
-      shadowOffset: {width: 0, height: 4},
-      shadowOpacity: 0.3,
-      shadowRadius: 5,
-      elevation: 6,
+      ...Shadows.medium,
     },
   });
 
   return (
     <Animated.View
       style={styles.container}
-      onLayout={handleLayout}
-      pointerEvents={pointerEventsEnabled ? 'auto' : 'none'}>
+      pointerEvents={visible.__getValue() ? 'auto' : 'none'}>
       <View style={styles.content} accessibilityRole="tablist">
         {state.routes.map((route, index) => {
           const focused = state.index === index;
-          const descriptor = descriptors[route.key];
-          const options = descriptor.options;
+          const {options} = descriptors[route.key];
           const label = options.tabBarLabel ?? options.title ?? route.name;
-
-          const Icon = options.tabBarCustomIcon || (() => null);
+          const Icon = options.tabBarCustomIcon ?? (() => null);
           const isCenter = index === Math.floor(state.routes.length / 2);
 
-          const onPressTab = () => {
+          const handlePress = () => {
             const event = navigation.emit({
               type: 'tabPress',
               target: route.key,
               canPreventDefault: true,
             });
-
             if (!focused && !event.defaultPrevented) {
               navigation.dispatch({
-                ...CommonActions.navigate(route),
+                ...CommonActions.navigate({name: route.name, merge: true}),
                 target: state.key,
               });
             }
-
             onPress(index, route);
+            animateIcons(index);
           };
 
-          const onLongPressTab = () => {
+          const handleLongPress = () => {
             navigation.emit({type: 'tabLongPress', target: route.key});
             onLongPress(index, route);
+          };
+
+          const buttonProps = {
+            accessibilityRole: 'button',
+            accessibilityLabel:
+              options.tabBarAccessibilityLabel ?? `${label} tab`,
+            activeOpacity: 0.8,
+            onPress: handlePress,
+            onLongPress: handleLongPress,
+            onPressIn: () => handlePressIn(index),
+            onPressOut: () => handlePressOut(index, focused),
           };
 
           const icon = (
@@ -228,10 +211,8 @@ const CustomTabBar = ({state, descriptors, navigation, config = {}}) => {
               <Icon
                 focused={focused}
                 color={
-                  isCenter
-                    ? focused
-                      ? backgroundColor
-                      : inactiveColor
+                  isCenter && focused
+                    ? backgroundColor
                     : focused
                     ? activeColor
                     : inactiveColor
@@ -245,6 +226,7 @@ const CustomTabBar = ({state, descriptors, navigation, config = {}}) => {
             return (
               <View key={route.key} style={{flex: 1, alignItems: 'center'}}>
                 <TouchableOpacity
+                  {...buttonProps}
                   style={[
                     styles.centerButton,
                     {
@@ -252,16 +234,7 @@ const CustomTabBar = ({state, descriptors, navigation, config = {}}) => {
                         ? centerActiveColor
                         : centerInactiveColor,
                     },
-                  ]}
-                  onPress={onPressTab}
-                  onPressIn={() => handlePressIn(index)}
-                  onPressOut={() => handlePressOut(index, focused)}
-                  onLongPress={onLongPressTab}
-                  accessibilityRole="button"
-                  accessibilityLabel={
-                    options.tabBarAccessibilityLabel || `${label} tab`
-                  }
-                  activeOpacity={0.8}>
+                  ]}>
                   {icon}
                 </TouchableOpacity>
               </View>
@@ -272,17 +245,9 @@ const CustomTabBar = ({state, descriptors, navigation, config = {}}) => {
             <TouchableOpacity
               key={route.key}
               style={styles.tabItem}
-              onPress={onPressTab}
-              onPressIn={() => handlePressIn(index)}
-              onPressOut={() => handlePressOut(index, focused)}
-              onLongPress={onLongPressTab}
-              accessibilityRole="button"
-              accessibilityLabel={
-                options.tabBarAccessibilityLabel || `${label} tab`
-              }
-              activeOpacity={0.8}>
+              {...buttonProps}>
               {icon}
-              {!!label && (
+              {label && (
                 <Text style={[styles.tabLabel, focused && styles.activeLabel]}>
                   {label}
                 </Text>

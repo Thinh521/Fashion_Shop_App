@@ -10,8 +10,12 @@ import {
   Shadows,
 } from '../../../theme/theme';
 import {scale} from '../../../utils/scaling';
+import {useTheme} from '../../../contexts/ThemeContext';
 
 const SpecialOffer = () => {
+  const {theme} = useTheme();
+  const styles = createStyles(theme);
+
   return (
     <View style={styles.specialOfferCard}>
       <View style={styles.imageWrapper}>
@@ -41,53 +45,56 @@ const SpecialOffer = () => {
 
 export default SpecialOffer;
 
-const styles = StyleSheet.create({
-  specialOfferCard: {
-    flexDirection: 'row',
-    backgroundColor: Colors.white,
-    borderRadius: BorderRadius.r6,
-    padding: scale(20),
-    marginVertical: scale(20),
-    ...Shadows.medium,
-  },
+const createStyles = theme =>
+  StyleSheet.create({
+    specialOfferCard: {
+      flexDirection: 'row',
+      backgroundColor: theme.card,
+      borderRadius: BorderRadius.r6,
+      padding: scale(20),
+      marginVertical: scale(20),
+      ...Shadows.medium,
+    },
 
-  imageWrapper: {
-    width: '30%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+    imageWrapper: {
+      width: '30%',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
 
-  image: {
-    width: scale(75),
-    height: scale(60),
-  },
+    image: {
+      width: scale(75),
+      height: scale(60),
+    },
 
-  contentWrapper: {
-    width: '60%',
-    paddingLeft: scale(16),
-    justifyContent: 'center',
-  },
+    contentWrapper: {
+      width: '60%',
+      paddingLeft: scale(16),
+      justifyContent: 'center',
+    },
 
-  specialoffersHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
+    specialoffersHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
 
-  specialoffersTitle: {
-    fontSize: FontSizes.regular,
-    fontWeight: FontWeights.medium,
-    marginRight: 8,
-  },
+    specialoffersTitle: {
+      color: theme.text,
+      fontSize: FontSizes.regular,
+      fontWeight: FontWeights.medium,
+      marginRight: 8,
+    },
 
-  specialOffersIcon: {
-    width: scale(20),
-    height: scale(20),
-  },
+    specialOffersIcon: {
+      width: scale(20),
+      height: scale(20),
+    },
 
-  specialOffersDescription: {
-    lineHeight: scale(16),
-    fontSize: FontSizes.small,
-    fontWeight: FontWeights.light,
-  },
-});
+    specialOffersDescription: {
+      color: theme.text,
+      lineHeight: scale(16),
+      fontSize: FontSizes.small,
+      fontWeight: FontWeights.light,
+    },
+  });

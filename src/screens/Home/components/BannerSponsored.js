@@ -6,12 +6,16 @@ import commonStyles from '../../../styles/commonStyles';
 import {RightIcon_2} from '../../../assets/icons/Icons';
 import {Colors, FontSizes, FontWeights, Shadows} from '../../../theme/theme';
 import {isTablet, scale} from '../../../utils/scaling';
+import {useTheme} from '../../../contexts/ThemeContext';
 
 const bannerHeight = isTablet
   ? Dimensions.get('window').height * 0.5
   : Dimensions.get('window').height * 0.3;
 
 const BannerSponsored = () => {
+  const {theme} = useTheme();
+  const styles = createStyles(theme);
+
   return (
     <View style={styles.sponsoredContainer}>
       <Text style={styles.sponsoredTitle}>Sponsored</Text>
@@ -37,49 +41,52 @@ const BannerSponsored = () => {
 
 export default React.memo(BannerSponsored);
 
-const styles = StyleSheet.create({
-  sponsoredContainer: {
-    flexDirection: 'column',
-    borderRadius: 12,
-    ...Shadows.medium,
-    padding: scale(20),
-    backgroundColor: Colors.white,
-    marginBottom: scale(20),
-  },
+const createStyles = theme =>
+  StyleSheet.create({
+    sponsoredContainer: {
+      flexDirection: 'column',
+      borderRadius: 12,
+      ...Shadows.medium,
+      padding: scale(20),
+      backgroundColor: theme.card,
+      marginBottom: scale(100),
+    },
 
-  sponsoredTitle: {
-    marginBottom: scale(10),
-    fontSize: FontSizes.large,
-    fontWeight: FontWeights.medium,
-  },
+    sponsoredTitle: {
+      color: theme.text,
+      marginBottom: scale(10),
+      fontSize: FontSizes.large,
+      fontWeight: FontWeights.medium,
+    },
 
-  sponsoredImageContainer: {
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
+    sponsoredImageContainer: {
+      borderRadius: 8,
+      overflow: 'hidden',
+    },
 
-  sponsoredContent: {
-    marginTop: scale(10),
-  },
+    sponsoredContent: {
+      marginTop: scale(10),
+    },
 
-  sponsoredImage: {
-    width: '100%',
-    height: bannerHeight,
-    borderRadius: 8,
-  },
+    sponsoredImage: {
+      width: '100%',
+      height: bannerHeight,
+      borderRadius: 8,
+    },
 
-  sponsoredDiscount: {
-    fontSize: FontSizes.regular,
-    fontWeight: FontWeights.bold,
-  },
+    sponsoredDiscount: {
+      color: theme.text,
+      fontSize: FontSizes.regular,
+      fontWeight: FontWeights.bold,
+    },
 
-  sponsoredRightIcon: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+    sponsoredRightIcon: {
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
 
-  sponsoredIcon: {
-    width: scale(24),
-    height: scale(24),
-  },
-});
+    sponsoredIcon: {
+      width: scale(24),
+      height: scale(24),
+    },
+  });

@@ -9,11 +9,14 @@ import {
 } from '../../utils/storage';
 import {scale} from '../../utils/scaling';
 import {Colors, FontSizes, FontWeights} from '../../theme/theme';
+import {useTheme} from '../../contexts/ThemeContext';
 
 const CartIconHeader = forwardRef((props, ref) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const [totalQuantity, setTotalQuantity] = useState(0);
   const userId = getCurrentUserId();
+  const {theme} = useTheme();
+  const styles = createStyles(theme);
 
   useEffect(() => {
     const key = getCartKey(userId);
@@ -48,7 +51,7 @@ const CartIconHeader = forwardRef((props, ref) => {
 
   return (
     <View ref={ref} style={styles.container}>
-      <CartIcon color="black" />
+      <CartIcon style={styles.icon} />
       {totalQuantity > 0 && (
         <Animated.View
           style={[styles.badge, {transform: [{scale: scaleAnim}]}]}>
@@ -61,31 +64,35 @@ const CartIconHeader = forwardRef((props, ref) => {
   );
 });
 
-const styles = StyleSheet.create({
-  container: {
-    padding: scale(2),
-    position: 'relative',
-  },
-  badge: {
-    position: 'absolute',
-    right: scale(-10),
-    top: scale(-8),
-    backgroundColor: '#FF3D00',
-    borderRadius: 12,
-    minWidth: scale(18),
-    paddingHorizontal: scale(4),
-    paddingVertical: scale(2),
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#fff',
-  },
-  badgeText: {
-    textAlign: 'center',
-    color: Colors.white,
-    fontSize: FontSizes.xsmall - 2,
-    fontWeight: FontWeights.bold,
-  },
-});
+const createStyles = theme =>
+  StyleSheet.create({
+    container: {
+      padding: scale(2),
+      position: 'relative',
+    },
+    badge: {
+      position: 'absolute',
+      right: scale(-8),
+      top: scale(-6),
+      backgroundColor: '#FF3D00',
+      borderRadius: 12,
+      minWidth: scale(18),
+      paddingHorizontal: scale(4),
+      paddingVertical: scale(2),
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: '#fff',
+    },
+    badgeText: {
+      textAlign: 'center',
+      color: Colors.white,
+      fontSize: FontSizes.xsmall - 2,
+      fontWeight: FontWeights.bold,
+    },
+    icon: {
+      color: theme.icon,
+    },
+  });
 
 export default CartIconHeader;

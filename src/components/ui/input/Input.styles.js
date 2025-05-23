@@ -1,63 +1,66 @@
 import {StyleSheet} from 'react-native';
 
-export default StyleSheet.create({
-  label: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
-  },
+const createStyles = theme =>
+  StyleSheet.create({
+    label: {
+      fontSize: 14,
+      color: theme.text,
+      marginBottom: 8,
+    },
 
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#fff',
-  },
+    inputContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      backgroundColor: theme.background,
+    },
 
-  readonlyField: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#f5f5f5',
-    justifyContent: 'flex-start',
-  },
+    readonlyField: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      backgroundColor: theme.background,
+      justifyContent: 'flex-start',
+    },
 
-  readonlyText: {
-    fontSize: 16,
-    color: '#000',
-  },
+    readonlyText: {
+      fontSize: 16,
+      color: theme.text,
+    },
 
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: '#000',
-    paddingVertical: 0,
-    height: '100%',
-  },
+    input: {
+      flex: 1,
+      fontSize: 16,
+      color: theme.text,
+      paddingVertical: 0,
+      height: '100%',
+    },
 
-  disabledContainer: {
-    backgroundColor: '#f5f5f5',
-  },
+    disabledContainer: {
+      backgroundColor: theme.background,
+    },
 
-  leftIcon: {
-    marginRight: 8,
-  },
+    leftIcon: {
+      marginRight: 8,
+    },
 
-  rightContent: {
-    marginLeft: 8,
-  },
+    rightContent: {
+      marginLeft: 8,
+    },
 
-  eyeIcon: {
-    width: 24,
-    height: 24,
-  },
+    eyeIcon: {
+      width: 24,
+      height: 24,
+    },
 
-  rightIcon: {
-    width: 24,
-    height: 24,
-  },
-});
+    rightIcon: {
+      width: 24,
+      height: 24,
+    },
+  });
+
+export default createStyles;
