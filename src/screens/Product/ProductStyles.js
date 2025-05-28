@@ -4,6 +4,11 @@ import {scale} from '../../utils/scaling';
 
 const createStyles = theme =>
   StyleSheet.create({
+    center: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
     searchContainer: {
       marginBottom: scale(20),
     },

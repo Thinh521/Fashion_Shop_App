@@ -21,6 +21,8 @@ const CheckoutScreen = () => {
   const {theme} = useTheme();
   const styles = createStyles(theme);
 
+  console.log(product);
+
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -44,7 +46,7 @@ const CheckoutScreen = () => {
 
   const handleShipping = useCallback(() => {
     const addressString = user.address
-      ? `${user.address.address}, ${user.address.city}, ${user.address.state}, ${user.address.country}, ${user.address.pincode}`
+      ? `${user.address.address}, ${user.address.city}, ${user.address.country}`
       : 'N/A';
 
     navigation.navigate('NoBottomTab', {
@@ -75,13 +77,11 @@ const CheckoutScreen = () => {
 
   const renderProduct = useCallback(
     (item, index = 0) => {
-      const price = parseFloat(item.price.replace('₹', '') || 0);
-      const originalPrice = (price / (1 - item.discount / 100)).toFixed(0);
-      const imageSource =
-        typeof item.images[0] === 'string'
-          ? {uri: item.images[0]}
-          : item.images[0];
-
+      const price = parseFloat((item.price ?? '0').toString().replace('₹', ''));
+      const originalPrice = (
+        price /
+        (1 - item.discountPercentage / 100)
+      ).toFixed(0);
       return (
         <TouchableOpacity
           key={item.id || index}
@@ -90,45 +90,54 @@ const CheckoutScreen = () => {
           <View style={[commonStyles.row, styles.productContainer]}>
             <View>
               <FastImage
-                source={imageSource}
+                source={{
+                  uri: item.thumbnail,
+                  priority: FastImage.priority.normal,
+                }}
                 style={styles.image}
                 resizeMode={FastImage.resizeMode.cover}
                 cache={FastImage.cacheControl.immutable}
               />
             </View>
             <View style={styles.detailsContainer}>
-              <Text style={styles.productName}>{item.productName}</Text>
-              <View style={styles.variationsContainer}>
-                <Text style={styles.variationsLabel}>Color: </Text>
-                <View style={{flexDirection: 'row'}}>
-                  <View
-                    style={[
-                      styles.colorOption,
-                      {backgroundColor: item.selectedColor},
-                    ]}>
-                    <Text style={styles.colorText}>{item.colorName}</Text>
+              <Text
+                numberOfLines={1}
+                ellipsizeMode="tail"
+                style={styles.productName}>
+                {item.title || 'N/A'}
+              </Text>
+              {item.colorName && (
+                <View style={styles.variationsContainer}>
+                  <Text style={styles.variationsLabel}>Color: </Text>
+                  <View style={{flexDirection: 'row'}}>
+                    <View
+                      style={[
+                        styles.colorOption,
+                        {backgroundColor: item.selectedColor},
+                      ]}>
+                      <Text style={styles.colorText}>{item.colorName}</Text>
+                    </View>
                   </View>
                 </View>
-              </View>
-              <View style={styles.variationsContainer}>
-                <Text style={styles.variationsLabel}>Size: </Text>
-                <View style={{flexDirection: 'row'}}>
-                  <View style={styles.colorOption}>
-                    <Text style={styles.colorText}>{item.sizeName}</Text>
+              )}
+              {item.sizeName && (
+                <View style={styles.variationsContainer}>
+                  <Text style={styles.variationsLabel}>Size: </Text>
+                  <View style={{flexDirection: 'row'}}>
+                    <View style={styles.colorOption}>
+                      <Text style={styles.colorText}>{item.sizeName}</Text>
+                    </View>
                   </View>
                 </View>
-              </View>
+              )}
               <View style={styles.variationsContainer}>
                 <Text style={styles.variationsLabel}>Quantity: </Text>
                 <Text style={styles.colorText}>{item.quantity}</Text>
               </View>
               <View style={styles.ratingContainer}>
-                <Text style={styles.ratingText}>
-                  {item.rating?.average ?? 'N/A'}
-                </Text>
                 <View style={styles.stars}>
                   {[...Array(5)].map((_, i) => {
-                    const average = item.rating?.average || 0;
+                    const average = item.rating || 0;
                     const fillColor =
                       i + 1 <= Math.floor(average)
                         ? '#EDB310'
@@ -145,11 +154,16 @@ const CheckoutScreen = () => {
                     );
                   })}
                 </View>
+                <Text style={styles.ratingText}>
+                  {item.rating?.toLocaleString() || 0}
+                </Text>
               </View>
               <View style={styles.priceContainer}>
                 <Text style={styles.currentPrice}>{item.price}</Text>
                 <View style={styles.discountContainer}>
-                  <Text style={styles.discountText}>-{item.discount}%</Text>
+                  <Text style={styles.discountText}>
+                    {item.discountPercentage}%
+                  </Text>
                   <Text style={styles.originalPrice}>₹{originalPrice}</Text>
                 </View>
               </View>
@@ -196,7 +210,9 @@ const CheckoutScreen = () => {
               </TouchableOpacity>
             </View>
             <View>
-              <Text style={styles.inputLabel}>Name: {user.name || 'N/A'}</Text>
+              <Text style={styles.inputLabel}>
+                Name: {user.username || 'N/A'}
+              </Text>
             </View>
             <View>
               <Text style={styles.inputLabel}>
@@ -204,18 +220,21 @@ const CheckoutScreen = () => {
               </Text>
             </View>
             <View>
-              <Text style={styles.inputLabel}>
+              <Text
+                numberOfLines={1}
+                ellipsizeMode="tail"
+                style={styles.inputLabel}>
                 Address:{' '}
                 {user.address
                   ? `${user.address.address}, ${user.address.city}`
                   : 'N/A'}
               </Text>
             </View>
-            {user.email && (
+            {/* {user.email && (
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Email: {user.email}</Text>
               </View>
-            )}
+            )} */}
           </View>
           <TouchableOpacity
             onPress={handleMap}

@@ -1,97 +1,131 @@
-import React from 'react';
-import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import React, {useEffect, useState} from 'react';
+import {
+  View,
+  Linking,
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  PermissionsAndroid,
+  Platform,
+} from 'react-native';
 import MapView, {Marker} from 'react-native-maps';
+// import Geolocation from '@react-native-geolocation-service';
+import {Colors, FontSizes, FontWeights, Shadows} from '../../theme/theme';
+import {useTheme} from '../../contexts/ThemeContext';
+import {scale} from '../../utils/scaling';
 
-const MapPickerScreen = ({navigation}) => {
-  const fixedRegion = {
-    latitude: 10.762622,
-    longitude: 106.660172,
-    latitudeDelta: 0.01,
-    longitudeDelta: 0.01,
+const MapScreen = () => {
+  const {theme} = useTheme();
+  const styles = createStyles(theme);
+
+  const [userLocation, setUserLocation] = useState(null);
+
+  // Vị trí shop cố định
+  
+  const shopLocation = {
+    latitude: 10.806905,
+    longitude: 106.626354,
   };
 
-  const fixedAddress = '11 Nguyễn Văn Khối, Phường 11, Gò Vấp, TP.HCM';
+  const requestLocationPermission = async () => {
+    if (Platform.OS === 'android') {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+      );
+      return granted === PermissionsAndroid.RESULTS.GRANTED;
+    }
+    return true;
+  };
 
-  const confirmLocation = () => {
-    navigation.navigate('Checkout', {
-      address: fixedAddress,
-      coordinates: {
-        latitude: fixedRegion.latitude,
-        longitude: fixedRegion.longitude,
-      },
-    });
+  // const getUserLocation = async () => {
+  //   const hasPermission = await requestLocationPermission();
+  //   if (!hasPermission) return;
+
+  //   Geolocation.getCurrentPosition(
+  //     position => {
+  //       setUserLocation({
+  //         latitude: position.coords.latitude,
+  //         longitude: position.coords.longitude,
+  //         latitudeDelta: 0.01,
+  //         longitudeDelta: 0.01,
+  //       });
+  //     },
+  //     error => {
+  //       console.log('Lỗi khi lấy vị trí:', error);
+  //     },
+  //     {enableHighAccuracy: true, timeout: 15000, maximumAge: 10000},
+  //   );
+  // };
+
+  // useEffect(() => {
+  //   getUserLocation();
+  // }, []);
+
+  const openGoogleMapsDirection = () => {
+    if (!userLocation) return;
+
+    const url = `https://www.google.com/maps/dir/?api=1&origin=${userLocation.latitude},${userLocation.longitude}&destination=${shopLocation.latitude},${shopLocation.longitude}&travelmode=driving`;
+    Linking.openURL(url).catch(err =>
+      console.error('Lỗi khi mở Google Maps:', err),
+    );
   };
 
   return (
-    <View style={styles.container}>
+    <View style={{flex: 1}}>
       <MapView
-        style={styles.map}
-        region={fixedRegion}
-        scrollEnabled={false}
-        zoomEnabled={false}
-        pitchEnabled={false}
-        rotateEnabled={false}
-        showsUserLocation={false}>
+        style={{flex: 1}}
+        region={
+          userLocation || {
+            ...shopLocation,
+            latitudeDelta: 0.05,
+            longitudeDelta: 0.05,
+          }
+        }
+        showsUserLocation={true}
+        showsMyLocationButton={true}>
+        {userLocation && (
+          <Marker
+            coordinate={userLocation}
+            title="Vị trí của bạn"
+            description="Đây là vị trí hiện tại"
+          />
+        )}
+
         <Marker
-          coordinate={fixedRegion}
-          title="Vị trí giao hàng"
-          description={fixedAddress}
-          pinColor="#FF6347"
+          coordinate={shopLocation}
+          title="Cửa hàng"
+          description="Vị trí cửa hàng cố định"
         />
       </MapView>
-      <View style={styles.addressContainer}>
-        <Text style={styles.addressText}>Địa chỉ: {fixedAddress}</Text>
-        <Text style={styles.addressText}>
-          Tọa độ: {fixedRegion.latitude.toFixed(6)},{' '}
-          {fixedRegion.longitude.toFixed(6)}
-        </Text>
-        <TouchableOpacity
-          style={styles.confirmButton}
-          onPress={confirmLocation}>
-          <Text style={styles.confirmButtonText}>Xác nhận vị trí</Text>
-        </TouchableOpacity>
-      </View>
+
+      <TouchableOpacity
+        style={styles.directionButton}
+        onPress={openGoogleMapsDirection}>
+        <Text style={styles.buttonText}>Đường đi</Text>
+      </TouchableOpacity>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  map: {
-    flex: 1,
-  },
-  addressContainer: {
-    position: 'absolute',
-    bottom: 20,
-    left: 10,
-    right: 10,
-    backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 15,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-  },
-  addressText: {
-    fontSize: 16,
-    marginBottom: 10,
-    color: '#333',
-  },
-  confirmButton: {
-    backgroundColor: '#FF6347',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  confirmButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-});
+const createStyles = theme =>
+  StyleSheet.create({
+    directionButton: {
+      position: 'absolute',
+      bottom: scale(30),
+      left: scale(20),
+      right: scale(20),
+      backgroundColor: Colors.primary,
+      paddingVertical: scale(14),
+      borderRadius: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...Shadows.medium,
+    },
+    buttonText: {
+      color: Colors.white,
+      fontSize: FontSizes.regular,
+      fontWeight: FontWeights.semiBold,
+    },
+  });
 
-export default React.memo(MapPickerScreen);
+export default MapScreen;

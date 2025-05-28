@@ -7,13 +7,11 @@ import Images from '../../assets/images/Images';
 const splashScreen = () => {
   return (
     <>
-      {/* <View style={styles.container}>
-        <FastImage source={Images.common.logoScreen} style={styles.imageLogo} />
-      </View> */}
       <View style={styles.container}>
         <FastImage
           source={Images.common.splashScreen}
           style={styles.imageLogo}
+          resizeMode="contain"
         />
       </View>
     </>

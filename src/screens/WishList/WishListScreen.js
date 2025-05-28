@@ -15,7 +15,7 @@ import {useFocusEffect, useNavigation} from '@react-navigation/core';
 import {getCurrentUser, getWishList} from '../../utils/storage';
 import createStyles from './WishList.styles';
 import LoadingOverlay from '../../components/lottie/LoadingOverlay';
-import { useTheme } from '../../contexts/ThemeContext';
+import {useTheme} from '../../contexts/ThemeContext';
 
 const WishListScreen = () => {
   const {theme} = useTheme();
@@ -93,15 +93,19 @@ const WishListScreen = () => {
                     onPress={() =>
                       navigation.navigate('NoBottomTab', {
                         screen: 'ProductDetail',
-                        params: {product: item},
+                        params: {productId: item.id},
                       })
                     }
                     style={styles.card}>
                     <View style={styles.productImageContainer}>
                       <FastImage
-                        source={item.images[0]}
+                        source={{
+                          uri: item.thumbnail,
+                          priority: FastImage.resizeMode.normal,
+                        }}
                         style={styles.productImage}
-                        resizeMode="contain"
+                        resizeMode={FastImage.resizeMode.cover}
+                        fallback
                       />
                       <View style={styles.productWishlist}>
                         <WishListIcon color="red" />
@@ -126,7 +130,7 @@ const WishListScreen = () => {
                       <View style={styles.ratingContainer}>
                         <View style={styles.stars}>
                           {[...Array(5)].map((_, i) => {
-                            const average = item.rating?.average || 0;
+                            const average = item.rating || 0;
                             let fillColor = '#ccc';
 
                             if (i + 1 <= Math.floor(average)) {
@@ -148,7 +152,7 @@ const WishListScreen = () => {
                           })}
                         </View>
                         <Text style={styles.ratingCount}>
-                          ({item.rating?.countRating?.toLocaleString() || 0})
+                          ({item.rating?.toLocaleString() || 0})
                         </Text>
                       </View>
                     </View>

@@ -111,7 +111,7 @@ const ProfileEditScreen = () => {
             <Text style={styles.sectionTitle}>Personal Details</Text>
             <Input
               label="Name"
-              value={editedData.name}
+              value={editedData.username}
               onChangeText={text => handleChange('name', text)}
               containerStyle={styles.inputContainer}
               readonly={!isEditing}
@@ -155,7 +155,7 @@ const ProfileEditScreen = () => {
             />
             <Input
               label="Pincode"
-              value={editedData.address.pincode}
+              value={editedData.ip}
               onChangeText={text => handleAddressChange('pincode', text)}
               containerStyle={styles.inputContainer}
               readonly={!isEditing}
@@ -190,21 +190,21 @@ const ProfileEditScreen = () => {
             <Text style={styles.sectionTitle}>Bank Account Details</Text>
             <Input
               label="Bank Account Number"
-              value={editedData.bank.accountNumber}
+              value={editedData.bank.cardNumber}
               onChangeText={text => handleBankChange('accountNumber', text)}
               containerStyle={styles.inputContainer}
               readonly={!isEditing}
             />
             <Input
               label="Account Holder's Name"
-              value={editedData.bank.accountHolder}
+              value={editedData.bank.cardType}
               onChangeText={text => handleBankChange('accountHolder', text)}
               containerStyle={styles.inputContainer}
               readonly={!isEditing}
             />
             <Input
               label="IFSC Code"
-              value={editedData.bank.ifscCode}
+              value={editedData.bank.iban}
               onChangeText={text => handleBankChange('ifscCode', text)}
               containerStyle={styles.inputContainer}
               readonly={!isEditing}

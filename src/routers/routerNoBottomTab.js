@@ -14,6 +14,7 @@ import ProfileEditScreen from '../screens/Setting/ProfileEditScreen';
 import CartScreen from '../screens/Cart';
 import MapPickerScreen from '../screens/MapPicker/MapPickerScreen';
 import OrderScreen from '../screens/order/orderScreen';
+import OrderDetailScreen from '../screens/order/OrderDetailScreen';
 
 const routerNoBottomTab = [
   {
@@ -146,9 +147,19 @@ const routerNoBottomTab = [
   {
     name: 'Order',
     component: OrderScreen,
-    options: ({navigation}) => ({
+    options: () => ({
       title: 'Order',
       headerTitle: 'Order',
+      headerTitleAlign: 'center',
+      headerBackTitleVisible: false,
+    }),
+  },
+  {
+    name: 'OrderDetail',
+    component: OrderDetailScreen,
+    options: () => ({
+      title: 'OrderDetail',
+      headerTitle: 'Chi tiết đơn hàng',
       headerTitleAlign: 'center',
       headerBackTitleVisible: false,
     }),

@@ -20,7 +20,12 @@ import {
   SupportIcon,
 } from '../../assets/icons/Icons';
 import {Button} from '../../components/ui/button/Button';
-import {clearCurrentUser, getCurrentUser} from '../../utils/storage';
+import {
+  clearCurrentUser,
+  getCurrentUser,
+  getCurrentUserId,
+  getTotalOrderCount,
+} from '../../utils/storage';
 import {CommonActions, useNavigation} from '@react-navigation/core';
 import CartIconHeader from '../../components/CartIcon/CartIcon';
 import {scale} from '../../utils/scaling';
@@ -29,10 +34,12 @@ import {Colors} from '../../theme/theme';
 import LoadingOverlay from '../../components/lottie/LoadingOverlay';
 
 const SettingScreen = () => {
+  const userId = getCurrentUserId();
   const navigation = useNavigation();
   const [user, setUser] = useState(null);
   const {theme, toggleTheme, isDarkMode} = useTheme();
   const styles = createStyles(theme);
+  const [totalQuantity, setTotalQuantity] = useState(0);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -43,6 +50,15 @@ const SettingScreen = () => {
     };
     fetchUser();
   }, []);
+
+  useEffect(() => {
+    const updateOrderCount = () => {
+      const count = getTotalOrderCount(userId);
+      setTotalQuantity(count);
+    };
+
+    updateOrderCount();
+  }, [userId]);
 
   const handleLogout = async () => {
     await clearCurrentUser();
@@ -129,7 +145,7 @@ const SettingScreen = () => {
               </TouchableOpacity>
             </View>
             <Text style={[styles.profileName, {color: theme.text}]}>
-              {user?.name || 'No name'}
+              {user?.username || 'No name'}
             </Text>
           </View>
 
@@ -152,10 +168,25 @@ const SettingScreen = () => {
                   onPress={navigationToOrder}
                   style={[
                     styles.box,
-                    {backgroundColor: theme.card, borderColor: theme.border},
+                    {
+                      backgroundColor: theme.card,
+                      borderColor: theme.border,
+                    },
                   ]}
                   activeOpacity={0.7}>
-                  <PaperIcon style={styles.icon} />
+                  <View style={{position: 'relative'}}>
+                    <PaperIcon style={styles.icon} />
+                    {totalQuantity > 0 && (
+                      <View style={styles.badge}>
+                        <Text
+                          numberOfLines={1}
+                          ellipsizeMode="clip"
+                          style={styles.badgeText}>
+                          {totalQuantity}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
                   <Text
                     style={[styles.label, {color: theme.text}]}
                     numberOfLines={1}

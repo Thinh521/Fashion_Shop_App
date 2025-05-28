@@ -11,6 +11,7 @@ import {
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import FastImage from 'react-native-fast-image';
 import {Swipeable} from 'react-native-gesture-handler';
+import {useQuery, useQueryClient} from '@tanstack/react-query';
 
 import styles from './Cart.styles';
 import commonStyles from '../../styles/commonStyles';
@@ -21,54 +22,25 @@ import {
   IconButton,
 } from '../../components/ui/button/Button';
 import {
-  getCart,
-  getCurrentUser,
-  removeFromCart,
-  updateCartQuantity,
-} from '../../utils/storage';
+  fetchCartByUserId,
+  updateCartItemInApi,
+  deleteCartItemInApi,
+} from '../../api/cartApi';
 
-const ProductItem = React.memo(({item, onDelete}) => {
-  const convertHexToColorName = hex => {
-    const colorMap = {
-      '#000': 'Black',
-      '#000000': 'Black',
-      '#fff': 'White',
-      '#ffffff': 'White',
-      '#ff0000': 'Red',
-      '#00ff00': 'Lime',
-      '#000080': 'Blue',
-    };
-    return colorMap[hex?.toLowerCase()] || hex;
-  };
-
+const ProductItem = React.memo(({item, onDelete, onUpdateQuantity}) => {
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const [quantity, setQuantity] = useState(item.quantity || 1);
 
-  const updateCartItem = useCallback(async (productItem, newQuantity) => {
-    try {
-      const user = getCurrentUser();
-      if (!user) {
-        return;
-      }
-      await updateCartQuantity(user.id, productItem.variantId, newQuantity);
-    } catch (error) {
-      console.error('Update cart error:', error);
-    }
-  }, []);
-
   const increase = () => {
-    if (quantity >= item.availableStock) {
-      return;
-    }
     const newQuantity = quantity + 1;
     setQuantity(newQuantity);
-    updateCartItem(item, newQuantity);
+    onUpdateQuantity(item.id, newQuantity);
   };
 
   const decrease = () => {
     const newQuantity = quantity > 1 ? quantity - 1 : 1;
     setQuantity(newQuantity);
-    updateCartItem(item, newQuantity);
+    onUpdateQuantity(item.id, newQuantity);
   };
 
   const handleDelete = () => {
@@ -77,49 +49,37 @@ const ProductItem = React.memo(({item, onDelete}) => {
       duration: 200,
       useNativeDriver: true,
     }).start(() => {
-      onDelete(item.variantId);
+      onDelete(item.id);
     });
   };
 
-  const renderRightActions = () => (
-    <Animated.View style={{opacity: fadeAnim}}>
-      <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
-        <Text style={styles.deleteButtonText}>Xoá</Text>
-      </TouchableOpacity>
-    </Animated.View>
-  );
-
   return (
-    <Swipeable renderRightActions={renderRightActions}>
+    <Swipeable
+      renderRightActions={() => (
+        <Animated.View style={{opacity: fadeAnim}}>
+          <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+            <Text style={styles.deleteButtonText}>Xoá</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      )}>
       <Animated.View style={[styles.productItemContainer, {opacity: fadeAnim}]}>
         <View style={[commonStyles.row, styles.productContainer]}>
           <FastImage
             style={styles.image}
             resizeMode={FastImage.resizeMode.cover}
-            source={item.images?.[0]}
+            source={{
+              uri: item.thumbnail,
+              priority: FastImage.priority.normal,
+            }}
           />
-
           <View style={styles.detailsContainer}>
             <Text style={styles.productName} numberOfLines={2}>
-              {item.productName}
+              {item.title}
             </Text>
             <Text style={styles.productDescription}>
-              {item.price} {item.discount && `(-${item.discount}%)`}
+              {item.price}{' '}
+              {item.discountPercentage && `(-${item.discountPercentage}%)`}
             </Text>
-            <View style={styles.specsContainer}>
-              <View style={styles.specItem}>
-                <Text style={styles.specLabel}>Màu: </Text>
-                <Text style={styles.specValue}>
-                  {convertHexToColorName(item.selectedColor || item.colorName)}
-                </Text>
-              </View>
-              <View style={styles.specItem}>
-                <Text style={styles.specLabel}>Size: </Text>
-                <Text style={styles.specValue}>
-                  {convertHexToColorName(item.selectedSize || item.sizeName)}
-                </Text>
-              </View>
-            </View>
             <View style={styles.bottomRow}>
               <View style={styles.quantityContainer}>
                 <IconButton
@@ -134,7 +94,7 @@ const ProductItem = React.memo(({item, onDelete}) => {
                     const num = parseInt(text);
                     if (!isNaN(num) && num > 0) {
                       setQuantity(num);
-                      updateCartItem(item, num);
+                      onUpdateQuantity(item.id, num);
                     }
                   }}
                   keyboardType="numeric"
@@ -196,86 +156,121 @@ const PaymentDetails = React.memo(({totalAmount, onProceed}) => (
 ));
 
 const calculateItemTotal = (item, quantity) => {
-  const price = parseFloat(item.price.replace(/[^\d.]/g, '')) || 0;
+  const rawPrice = item?.price;
+  const price =
+    typeof rawPrice === 'string'
+      ? parseFloat(rawPrice.replace(/[^\d.]/g, ''))
+      : typeof rawPrice === 'number'
+      ? rawPrice
+      : 0;
   return `₹${(price * quantity).toFixed(2)}`;
 };
 
-const EmptyCart = () => (
-  <View style={[commonStyles.center, {flex: 1, padding: 20}]}>
-    <Text style={{fontSize: 18, color: '#666', textAlign: 'center'}}>
-      Your cart is empty. Start shopping to add items!
-    </Text>
-  </View>
-);
-
 const CartScreen = () => {
   const navigation = useNavigation();
+  const queryClient = useQueryClient();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const totalAmount = useMemo(
-    () =>
-      products.reduce((sum, item) => {
-        const price = parseFloat(item.price.replace(/[^\d.]/g, '')) || 0;
-        return sum + price * (item.quantity || 1);
-      }, 0),
-    [products],
-  );
+  const userId = 172;
+
+  const {
+    data: apiCart,
+    isLoading: apiLoading,
+    isError: apiError,
+    error: apiErrorObj,
+  } = useQuery({
+    queryKey: ['carts', userId],
+    queryFn: () => fetchCartByUserId(userId),
+    enabled: !!userId,
+  });
+
+  const totalAmount = useMemo(() => {
+    return (apiCart?.products || []).reduce((sum, item) => {
+      const rawPrice = item?.price;
+      const price =
+        typeof rawPrice === 'string'
+          ? parseFloat(rawPrice.replace(/[^\d.]/g, ''))
+          : typeof rawPrice === 'number'
+          ? rawPrice
+          : 0;
+      return sum + price * (item.quantity || 1);
+    }, 0);
+  }, [apiCart]);
 
   const handleShipping = useCallback(() => {
     navigation.navigate('NoBottomTab', {screen: 'Shipping'});
   }, [navigation]);
 
-  const fetchCart = useCallback(async () => {
+  const syncCartData = useCallback(async () => {
     try {
       setLoading(true);
-      const user = getCurrentUser();
-      if (!user) {
-        setError('Vui lòng đăng nhập để xem giỏ hàng');
+      if (!apiCart) {
         setProducts([]);
+        setError(null);
         return;
       }
-      const cartItems = getCart(user.id);
-      if (!cartItems || cartItems.length === 0) {
+
+      if (apiCart.products && apiCart.products.length > 0) {
+        setProducts(apiCart.products);
+        setError(null);
+      } else {
         setProducts([]);
-        return;
+        setError(null);
       }
-      const validatedItems = cartItems.map(item => ({
-        ...item,
-        quantity: item.quantity || 1,
-      }));
-      setProducts(validatedItems);
-      setError(null);
     } catch (e) {
-      console.error('Fetch cart error:', e);
-      setError('Lỗi khi tải giỏ hàng');
+      console.error('Sync cart error:', e);
+      setError('Lỗi khi đồng bộ giỏ hàng');
+      setProducts([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [apiCart]);
+
+  const handleDelete = useCallback(
+    async variantId => {
+      try {
+        await deleteCartItemInApi(userId, variantId);
+        if (apiCart?.products) {
+          setProducts(prev => prev.filter(item => item.id !== variantId));
+          queryClient.invalidateQueries(['carts', userId]);
+        }
+      } catch (e) {
+        console.error('Delete item error:', e);
+        setError('Lỗi khi xóa sản phẩm');
+      }
+    },
+    [userId, queryClient, apiCart],
+  );
+
+  const handleUpdateQuantity = useCallback(
+    async (variantId, newQuantity) => {
+      try {
+        await updateCartItemInApi(userId, variantId, newQuantity);
+        if (apiCart?.products) {
+          setProducts(prev =>
+            prev.map(item =>
+              item.id === variantId ? {...item, quantity: newQuantity} : item,
+            ),
+          );
+          queryClient.invalidateQueries(['carts', userId]);
+        }
+      } catch (e) {
+        console.error('Update quantity error:', e);
+        setError('Lỗi khi cập nhật số lượng');
+      }
+    },
+    [userId, queryClient, apiCart],
+  );
 
   useFocusEffect(
     useCallback(() => {
-      fetchCart();
-    }, [fetchCart]),
+      syncCartData();
+    }, [syncCartData]),
   );
 
-  const handleDelete = useCallback(async variantId => {
-    try {
-      const user = getCurrentUser();
-      if (!user) {
-        setError('User not logged in');
-        return;
-      }
-      await removeFromCart(user.id, variantId);
-      setProducts(prev => prev.filter(item => item.variantId !== variantId));
-    } catch (e) {
-      console.error('Delete item error:', e);
-    }
-  }, []);
-
-  if (loading) {
+  if (loading || apiLoading) {
     return (
       <View style={commonStyles.center}>
         <ActivityIndicator size="large" color="gray" />
@@ -283,16 +278,22 @@ const CartScreen = () => {
     );
   }
 
-  if (error) {
+  if (error || apiError) {
     return (
       <View style={commonStyles.center}>
-        <Text style={{color: 'red'}}>{error}</Text>
+        <Text style={{color: 'red'}}>{error || apiErrorObj?.message}</Text>
       </View>
     );
   }
 
-  if (products.length === 0) {
-    return <EmptyCart />;
+  if (!apiCart?.products || apiCart.products.length === 0) {
+    return (
+      <View style={[commonStyles.center, {flex: 1, padding: 20}]}>
+        <Text style={{fontSize: 18, color: '#666', textAlign: 'center'}}>
+          Your cart is empty. Start shopping to add items!
+        </Text>
+      </View>
+    );
   }
 
   return (
@@ -301,11 +302,12 @@ const CartScreen = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}>
         <View style={styles.container}>
-          {products.map(item => (
+          {apiCart.products.map(item => (
             <ProductItem
-              key={item.variantId}
+              key={item.id}
               item={item}
               onDelete={handleDelete}
+              onUpdateQuantity={handleUpdateQuantity}
             />
           ))}
           <PaymentDetails
@@ -323,7 +325,7 @@ const CartScreen = () => {
             onPress={handleShipping}
             buttonStyle={{backgroundColor: '#F83758', borderRadius: 4}}
             width="100%"
-            height={55}
+            height={48}
             textStyle={{fontSize: 17, fontWeight: '600'}}
           />
         </View>

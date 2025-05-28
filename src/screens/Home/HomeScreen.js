@@ -20,6 +20,7 @@ import BannerSponsored from './components/BannerSponsored';
 import {useNavigation} from '@react-navigation/core';
 import {useTheme} from '../../contexts/ThemeContext';
 import createStyles from './HomeStyles';
+import ProductSlider_2 from './components/ProductSlider_2';
 
 const HomeScreen = () => {
   const {theme} = useTheme();
@@ -90,7 +91,7 @@ const HomeScreen = () => {
         <TrendingProduct />
 
         {/* Slider Product 2 */}
-        <ProductSlider_1 />
+        <ProductSlider_2 />
 
         {/* Banner Summer */}
         <BannerSummer />

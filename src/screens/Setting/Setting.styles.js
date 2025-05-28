@@ -1,5 +1,5 @@
 import {StyleSheet} from 'react-native';
-import {FontSizes, FontWeights} from '../../theme/theme';
+import {Colors, FontSizes, FontWeights} from '../../theme/theme';
 import {scale} from '../../utils/scaling';
 
 const createStyles = theme =>
@@ -103,6 +103,26 @@ const createStyles = theme =>
       shadowOffset: {width: 0, height: 1},
       shadowOpacity: 0.2,
       shadowRadius: 2,
+    },
+    badge: {
+      position: 'absolute',
+      right: scale(-8),
+      top: scale(-6),
+      backgroundColor: '#FF3D00',
+      borderRadius: 12,
+      minWidth: scale(18),
+      paddingHorizontal: scale(4),
+      paddingVertical: scale(2),
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: '#fff',
+    },
+    badgeText: {
+      textAlign: 'center',
+      color: Colors.white,
+      fontSize: FontSizes.xsmall - 2,
+      fontWeight: FontWeights.bold,
     },
     label: {
       textAlign: 'center',

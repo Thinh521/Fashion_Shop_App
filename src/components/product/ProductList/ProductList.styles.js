@@ -4,10 +4,6 @@ import {scale} from '../../../utils/scaling';
 
 const createStyles = theme =>
   StyleSheet.create({
-    scrollContainer: {
-      marginBottom: scale(100),
-    },
-
     grid: {
       gap: scale(10),
       flexDirection: 'row',
@@ -16,11 +12,12 @@ const createStyles = theme =>
     },
 
     card: {
-      width: '48%',
+      width: '46%',
       borderWidth: 1,
       borderColor: theme.border,
       backgroundColor: theme.card,
       borderRadius: 8,
+      marginBottom: scale(12),
       overflow: 'hidden',
       ...Shadows.medium,
     },

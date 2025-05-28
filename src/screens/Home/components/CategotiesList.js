@@ -1,123 +1,132 @@
 import {FlatList, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import React from 'react';
-import commonStyles from '../../../styles/commonStyles';
-import FastImage from 'react-native-fast-image';
-import Images from '../../../assets/images/Images';
-import {FontSizes, FontWeights} from '../../../theme/theme';
-import {scale} from '../../../utils/scaling';
 import {useTheme} from '../../../contexts/ThemeContext';
+import {useCategories} from '../../../hooks/useCategories';
+import {useNavigation} from '@react-navigation/core';
+import SkeletonPlaceholder from 'react-native-skeleton-placeholder';
 
-const stories = [
-  {
-    id: 1,
-    image: Images.common.story_1,
-    title: 'Beauty',
-  },
-  {
-    id: 2,
-    image: Images.common.story_2,
-    title: 'Fashion',
-  },
-  {
-    id: 3,
-    image: Images.common.story_3,
-    title: 'Kids',
-  },
-  {
-    id: 4,
-    image: Images.common.story_4,
-    title: 'Mens',
-  },
-  {
-    id: 5,
-    image: Images.common.story_5,
-    title: 'Womens',
-  },
-  {
-    id: 6,
-    image: Images.common.story_1,
-    title: 'Womens',
-  },
-  {
-    id: 7,
-    image: Images.common.story_2,
-    title: 'Womens',
-  },
-];
-
-const CategotiesList = () => {
+const CategoriesList = () => {
   const {theme} = useTheme();
   const styles = createStyles(theme);
+  const navigation = useNavigation();
+  const {data: categories = [], isLoading, isError, error} = useCategories();
+
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <SkeletonPlaceholder borderRadius={4}>
+          <View style={styles.skeletonContainer}>
+            {Array(5)
+              .fill(0)
+              .map((_, index) => (
+                <View key={index} style={styles.skeletonItem} />
+              ))}
+          </View>
+        </SkeletonPlaceholder>
+      </View>
+    );
+  }
+
+  if (isError) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.errorText}>
+          Lỗi: {error?.message || 'Không thể tải dữ liệu'}
+        </Text>
+      </View>
+    );
+  }
 
   return (
-    <View>
-      <View style={styles.categoriesWrapper}>
-        <FlatList
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          data={stories}
-          keyExtractor={item => item.id.toString()}
-          contentContainerStyle={styles.categoriesContainer}
-          renderItem={({item, index}) => {
-            const isLastItem = index === stories.length - 1;
-            return (
-              <TouchableOpacity
-                style={[
-                  styles.categoryItem,
-                  {marginRight: isLastItem ? 0 : 16},
-                ]}
-                activeOpacity={0.7}>
-                <View
-                  style={[commonStyles.center, styles.categoryImageContainer]}>
-                  <FastImage
-                    source={item.image}
-                    style={styles.categoryImage}
-                    resizeMode="contain"
-                  />
-                </View>
-                <Text style={styles.categoryText}>{item.title}</Text>
-              </TouchableOpacity>
-            );
-          }}
-        />
-      </View>
+    <View style={styles.container}>
+      <FlatList
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        data={categories}
+        keyExtractor={item => item.slug}
+        contentContainerStyle={styles.categoriesContainer}
+        initialNumToRender={5}
+        maxToRenderPerBatch={5}
+        windowSize={5}
+        renderItem={({item, index}) => {
+          const isFirstItem = index === 0;
+          const isLastItem = index === categories.length - 1;
+
+          return (
+            <TouchableOpacity
+              onPress={() => {
+                navigation.navigate('MainTabNavigator', {
+                  screen: 'Product',
+                  params: {categorySlug: item.slug, categoryName: item.name},
+                });
+              }}
+              style={[
+                styles.categoryItem,
+                isFirstItem && {marginLeft: 0},
+                isLastItem && {marginRight: 0},
+              ]}
+              activeOpacity={0.7}>
+              <View style={styles.categoryContent}>
+                <Text style={styles.categoryText}>{item.name}</Text>
+              </View>
+            </TouchableOpacity>
+          );
+        }}
+      />
     </View>
   );
 };
 
-export default CategotiesList;
-
 const createStyles = theme =>
   StyleSheet.create({
-    categoriesWrapper: {
-      marginBlockEnd: scale(20),
+    container: {
+      marginBottom: 20,
+      height: 60,
     },
-
-    categoriesContainer: {
-      paddingVertical: scale(8),
-    },
-
-    categoryItem: {
-      marginRight: scale(16),
+    center: {
+      flex: 1,
+      justifyContent: 'center',
       alignItems: 'center',
+      padding: 20,
     },
-
-    categoryImageContainer: {
-      width: scale(63),
-      height: scale(63),
-      borderRadius: 9999,
-      marginBottom: 8,
-    },
-
-    categoryImage: {
-      width: scale(63),
-      height: scale(63),
-    },
-
-    categoryText: {
-      color: theme.text,
+    errorText: {
+      color: theme.error || '#ff3b30',
+      fontSize: 16,
       textAlign: 'center',
-      fontSize: FontSizes.small,
-      fontWeight: FontWeights.regular,
+    },
+    categoriesContainer: {
+      paddingVertical: 8,
+      paddingHorizontal: 2,
+    },
+    categoryItem: {
+      marginRight: 16,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.card,
+    },
+    categoryContent: {
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      minWidth: 100,
+    },
+    categoryText: {
+      color: theme.text || '#333333',
+      fontSize: 14,
+      fontWeight: '600',
+      textAlign: 'center',
+      textTransform: 'capitalize',
+    },
+    skeletonContainer: {
+      flexDirection: 'row',
+      paddingVertical: 8,
+    },
+    skeletonItem: {
+      width: 100,
+      height: 40,
+      borderRadius: 12,
+      marginRight: 16,
     },
   });
+
+export default React.memo(CategoriesList);

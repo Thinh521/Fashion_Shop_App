@@ -5,13 +5,13 @@ import FlashMessage from 'react-native-flash-message';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import ErrorBoundary from './src/components/ErrorBoundary/ErrorBoundary';
-import { ThemeProvider } from './src/contexts/ThemeContext';
+import {ThemeProvider} from './src/contexts/ThemeContext';
 
 const queryClient = new QueryClient();
 
 export default function App() {
   return (
-    <GestureHandlerRootView styles={{flex: 1}}>
+    <GestureHandlerRootView style={{flex: 1}}>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <ErrorBoundary>

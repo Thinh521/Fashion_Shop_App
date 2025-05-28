@@ -186,3 +186,9 @@ export const updateOrderStatus = (userId, orderId, newStatus) => {
   );
   saveOrder(userId, updated);
 };
+
+// Tính tổng số lượng sản phẩm đã đặt hàng của 1 user
+export const getTotalOrderCount = userId => {
+  const orders = getOrder(userId) || [];
+  return orders.length;
+};

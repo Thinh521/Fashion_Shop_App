@@ -7,55 +7,45 @@ import {
   TextButton,
 } from '../../../components/ui/button/Button';
 import Input from '../../../components/ui/input';
+import {useForm, Controller} from 'react-hook-form';
 import {LockIcon, MailIcon} from '../../../assets/icons/Icons';
 import Images from '../../../assets/images/Images';
 import styles from './LoginStyles';
 import commonStyles from '../../../styles/commonStyles';
 import {showMessage} from 'react-native-flash-message';
-import {getAllUsers, saveCurrentUser} from '../../../utils/storage';
+import {saveCurrentUser} from '../../../utils/storage';
 import LoadingOverlay from '../../../components/lottie/LoadingOverlay';
+import {useUsers} from '../../../hooks/useUsers';
 
 const LoginScreen = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [errors, setErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
-
   const navigation = useNavigation();
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  // Xử lí thông báo lỗi
-  const validateForm = () => {
-    const newErrors = {};
+  const {
+    control,
+    handleSubmit,
+    formState: {errors},
+  } = useForm({
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
 
-    if (!email) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Email is not valid';
-    }
+  const {data: users = [], isLoading: isFetchingUsers, error} = useUsers();
 
-    if (!password) {
-      newErrors.password = 'Password is required';
-    } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  // Xử lý đăng nhập
+  const onSubmit = async ({email, password}) => {
+    setIsLoggingIn(true);
 
-  // Xử lí logic đăng nhập
-  const handleLogin = () => {
-    if (!validateForm()) return;
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500));
 
-    setIsLoading(true);
-
-    setTimeout(() => {
-      const users = getAllUsers();
       const matchedUser = users.find(
         user => user.email === email && user.password === password,
       );
 
       if (!matchedUser) {
-        setIsLoading(false);
         showMessage({
           message: 'Lỗi đăng nhập',
           description: 'Sai tài khoản hoặc mật khẩu',
@@ -65,14 +55,13 @@ const LoginScreen = () => {
         return;
       }
 
-      saveCurrentUser(matchedUser);
-
-      setIsLoading(false);
-      navigation.navigate('MainTabNavigator', {screen: 'Home'});
+      await saveCurrentUser(matchedUser);
 
       showMessage({
         message: 'Đăng nhập thành công',
-        description: `Chào mừng ${matchedUser.name || ''} đến với Stylish`,
+        description: `Chào mừng ${
+          matchedUser.name || matchedUser.firstName || ''
+        } đến với Stylish`,
         type: 'success',
         duration: 2000,
         icon: 'success',
@@ -81,73 +70,108 @@ const LoginScreen = () => {
           paddingVertical: 20,
         },
       });
-    }, 1000);
+
+      navigation.navigate('MainTabNavigator', {screen: 'Home'});
+    } catch (err) {
+      showMessage({
+        message: 'Lỗi',
+        description: err.message || 'Đã xảy ra lỗi',
+        type: 'danger',
+        duration: 3000,
+      });
+    } finally {
+      setIsLoggingIn(false);
+    }
   };
+
+  if (isFetchingUsers) return <LoadingOverlay />;
+
+  if (error) {
+    return (
+      <View style={styles.loginContainer}>
+        <Text style={{color: 'red', textAlign: 'center'}}>
+          Lỗi tải dữ liệu người dùng. Vui lòng thử lại.
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.loginContainer}>
       <Text style={styles.title}>Welcome Back!</Text>
 
       <View style={styles.inputContainer}>
-        <Input
-          placeholder="Email"
-          keyboardType="email-address"
-          leftIcon={MailIcon}
-          value={email}
-          inputStyle={{marginInlineStart: 6}}
-          containerStyle={[
-            errors.email && {borderColor: 'red', borderWidth: 1},
-          ]}
-          onBlur={() => {
-            if (!email) {
-              setErrors(prev => ({...prev, email: 'Email is required'}));
-            }
+        <Controller
+          control={control}
+          name="email"
+          rules={{
+            required: 'Email is required',
+            pattern: {
+              value: /\S+@\S+\.\S+/,
+              message: 'Email không hợp lệ',
+            },
           }}
-          onChangeText={text => {
-            setEmail(text);
-            if (errors.email) setErrors(prev => ({...prev, email: ''}));
-          }}
+          render={({field: {onChange, onBlur, value}}) => (
+            <Input
+              placeholder="Email"
+              keyboardType="email-address"
+              leftIcon={MailIcon}
+              value={value}
+              onBlur={onBlur}
+              onChangeText={onChange}
+              inputStyle={{marginInlineStart: 6}}
+              containerStyle={[
+                errors.email && {borderColor: 'red', borderWidth: 1},
+              ]}
+            />
+          )}
         />
-        {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
-      </View>
-
-      <View style={styles.inputContainer}>
-        <Input
-          placeholder="Password"
-          leftIcon={LockIcon}
-          isPassword
-          value={password}
-          containerStyle={[
-            styles.containerStyle,
-            errors.password && {borderColor: 'red', borderWidth: 1},
-          ]}
-          onBlur={() => {
-            if (!password) {
-              setErrors(prev => ({...prev, password: 'Password is required'}));
-            }
-          }}
-          onChangeText={text => {
-            setPassword(text);
-            if (errors.password) setErrors(prev => ({...prev, password: ''}));
-          }}
-        />
-        {errors.password && (
-          <Text style={styles.errorText}>{errors.password}</Text>
+        {errors.email && (
+          <Text style={styles.errorText}>{errors.email.message}</Text>
         )}
       </View>
 
-      <TouchableOpacity style={styles.forgotPassword}>
-        <Text
-          onPress={() => navigation.navigate('Forgotpassword')}
-          style={styles.forgotPasswordText}>
-          Forget Password?
-        </Text>
+      <View style={styles.inputContainer}>
+        <Controller
+          control={control}
+          name="password"
+          rules={{
+            required: 'Password is required',
+            minLength: {
+              value: 6,
+              message: 'Password phải ít nhất 6 ký tự',
+            },
+          }}
+          render={({field: {onChange, onBlur, value}}) => (
+            <Input
+              placeholder="Password"
+              leftIcon={LockIcon}
+              isPassword
+              value={value}
+              onBlur={onBlur}
+              onChangeText={onChange}
+              containerStyle={[
+                styles.containerStyle,
+                errors.password && {borderColor: 'red', borderWidth: 1},
+              ]}
+            />
+          )}
+        />
+        {errors.password && (
+          <Text style={styles.errorText}>{errors.password.message}</Text>
+        )}
+      </View>
+
+      <TouchableOpacity
+        style={styles.forgotPassword}
+        onPress={() => navigation.navigate('Forgotpassword')}>
+        <Text style={styles.forgotPasswordText}>Forget Password?</Text>
       </TouchableOpacity>
 
       <Button
         text="Login"
-        onPress={handleLogin}
-        disabled={isLoading}
+        onPress={handleSubmit(onSubmit)}
+        disabled={isLoggingIn} // Disable nút khi đang đăng nhập
         buttonStyle={{backgroundColor: '#F83758', borderRadius: 4}}
         width="100%"
         height={55}
@@ -194,7 +218,7 @@ const LoginScreen = () => {
         </View>
       </View>
 
-      {isLoading && <LoadingOverlay />}
+      {isLoggingIn && <LoadingOverlay />}
     </View>
   );
 };

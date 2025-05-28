@@ -5,15 +5,18 @@ import {
   FlatList,
   StyleSheet,
   useWindowDimensions,
+  Text,
+  ActivityIndicator,
 } from 'react-native';
+import ProductCard from './ProductCard';
 import {LeftIcon_2, RightIcon_2} from '../../../assets/icons/Icons';
-import productData from '../../../data/productData';
-import {Colors, Shadows} from '../../../theme/theme';
+import {Shadows} from '../../../theme/theme';
 import {useFocusEffect, useNavigation} from '@react-navigation/core';
 import {getCurrentUser, getWishList} from '../../../utils/storage';
 import {isTablet, scale} from '../../../utils/scaling';
-import ProductCard from './ProductCard';
 import {useTheme} from '../../../contexts/ThemeContext';
+import {useInfiniteQuery} from '@tanstack/react-query';
+import {fetchProducts} from '../../../api/productApi';
 
 const ProductSlider_1 = () => {
   const {theme} = useTheme();
@@ -24,67 +27,175 @@ const ProductSlider_1 = () => {
   const {width} = useWindowDimensions();
   const numColumns = useMemo(() => (isTablet ? 4 : 2), []);
   const ITEM_WIDTH = useMemo(() => {
-    return (width - 10 * (numColumns - 1) - 32) / numColumns;
+    return (width - 10 * (numColumns - 1) - 42) / numColumns;
   }, [width, numColumns]);
 
-  const [isLoading, setIsLoading] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [wishlistedSet, setWishlistedSet] = useState(new Set());
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ['products'],
+    queryFn: ({pageParam = 1}) => fetchProducts({pageParam}),
+    getNextPageParam: lastPage => lastPage.nextPage,
+    staleTime: 5 * 60 * 1000,
+  });
 
+  // Tải wishlist khi màn hình được focus
   useFocusEffect(
     useCallback(() => {
-      const currentUser = getCurrentUser();
-      if (currentUser) {
-        const wishlistData = getWishList(currentUser.id);
-        setWishlistedSet(new Set(wishlistData.map(item => item.id)));
-      } else {
-        setWishlistedSet(new Set());
-      }
+      const loadWishlist = async () => {
+        try {
+          const currentUser = await getCurrentUser();
+          if (currentUser) {
+            const wishlistData = await getWishList(currentUser.id);
+            setWishlistedSet(new Set(wishlistData.map(item => item.id)));
+          } else {
+            setWishlistedSet(new Set());
+          }
+        } catch (err) {
+          console.error('Lỗi khi lấy wishlist:', err);
+        }
+      };
+      loadWishlist();
     }, []),
   );
 
-  const scrollToIndex = index => {
-    flatListRef.current?.scrollToIndex({animated: true, index});
-    setCurrentIndex(index);
-  };
+  // Chuyển đổi dữ liệu từ tất cả các trang thành mảng phẳng
+  const productList = useMemo(() => {
+    if (!data?.pages) return [];
+    const allProducts = data.pages.flatMap(page => page.products);
 
-  const handleNext = () => {
-    if (currentIndex < productData.length - numColumns) {
+    return allProducts.map(item => ({
+      ...item,
+      isWishlisted: wishlistedSet.has(item.id),
+    }));
+  }, [data?.pages, wishlistedSet]);
+
+  const scrollToIndex = useCallback(
+    index => {
+      if (index >= 0 && index < productList.length) {
+        flatListRef.current?.scrollToIndex({animated: true, index});
+        setCurrentIndex(index);
+      }
+    },
+    [productList.length],
+  );
+
+  const handleNext = useCallback(() => {
+    if (currentIndex < productList.length - numColumns) {
       scrollToIndex(currentIndex + 1);
+      if (currentIndex + numColumns >= productList.length - 1 && hasNextPage) {
+        fetchNextPage();
+      }
     }
-  };
+  }, [
+    currentIndex,
+    productList.length,
+    numColumns,
+    scrollToIndex,
+    hasNextPage,
+    fetchNextPage,
+  ]);
 
-  const handlePrev = () => {
+  const handlePrev = useCallback(() => {
     if (currentIndex > 0) {
       scrollToIndex(currentIndex - 1);
     }
-  };
+  }, [currentIndex, scrollToIndex]);
 
   const navigationToProductDetail = useCallback(
     item => {
       navigation.navigate('NoBottomTab', {
         screen: 'ProductDetail',
-        params: {product: item},
+        params: {productId: item.id},
       });
     },
     [navigation],
   );
 
+  const handleLoadMore = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage && productList.length >= 10) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage, productList.length]);
+
+  const renderFooter = useCallback(() => {
+    if (!isFetchingNextPage) return null;
+
+    return (
+      <View style={[styles.footerContainer, {width: ITEM_WIDTH}]}>
+        <ActivityIndicator size="small" color={theme.primary} />
+      </View>
+    );
+  }, [isFetchingNextPage, theme]);
+
+  if (isLoading && !productList.length) {
+    return (
+      <View style={styles.container}> 
+        <FlatList
+          data={Array(numColumns).fill({})}
+          renderItem={({item, index}) => (
+            <ProductCard
+              item={item}
+              width={ITEM_WIDTH}
+              isWishlisted={false}
+              isLoading={true}
+              onPress={() => {}}
+            />
+          )}
+          keyExtractor={(_, index) => `skeleton-${index}`}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          ItemSeparatorComponent={() => <View style={{width: 10}} />}
+          snapToInterval={ITEM_WIDTH + 10}
+          decelerationRate="fast"
+        />
+      </View>
+    );
+  }
+
+  if (isError) {
+    return (
+      <View style={styles.center}>
+        <Text style={{color: theme.error || 'red'}}>
+          Lỗi: {error?.message || 'Không thể tải dữ liệu'}
+        </Text>
+      </View>
+    );
+  }
+
+  if (productList.length === 0) {
+    return (
+      <View style={styles.center}>
+        <Text style={{color: theme.text}}>Không có sản phẩm để hiển thị</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <FlatList
         ref={flatListRef}
-        data={productData}
+        data={productList}
+        extraData={productList}
         renderItem={({item}) => (
           <ProductCard
             item={item}
             width={ITEM_WIDTH}
-            isWishlisted={wishlistedSet.has(item.id)}
+            isWishlisted={item.isWishlisted}
             isLoading={isLoading}
             onPress={navigationToProductDetail}
           />
         )}
-        keyExtractor={item => item.id.toString()}
+        ListFooterComponent={renderFooter}
+        keyExtractor={item => item.id?.toString() || Math.random().toString()}
         horizontal
         showsHorizontalScrollIndicator={false}
         ItemSeparatorComponent={() => <View style={{width: 10}} />}
@@ -101,6 +212,10 @@ const ProductSlider_1 = () => {
           );
           setCurrentIndex(index);
         }}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.5}
+        initialNumToRender={10}
+        windowSize={5}
       />
 
       {currentIndex > 0 && (
@@ -111,7 +226,7 @@ const ProductSlider_1 = () => {
         </TouchableOpacity>
       )}
 
-      {currentIndex < productData.length - numColumns && (
+      {currentIndex < productList.length - numColumns && (
         <TouchableOpacity
           style={[styles.navButton, styles.rightButton]}
           onPress={handleNext}>
@@ -127,6 +242,11 @@ const createStyles = theme =>
     container: {
       position: 'relative',
     },
+    center: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
     navButton: {
       position: 'absolute',
       top: '45%',
@@ -134,7 +254,7 @@ const createStyles = theme =>
       height: scale(40),
       justifyContent: 'center',
       alignItems: 'center',
-      backgroundColor: theme.border,
+      backgroundColor: theme.border || '#ccc',
       borderRadius: 9999,
       transform: [{translateY: -20}],
       ...Shadows.medium,
@@ -144,6 +264,17 @@ const createStyles = theme =>
     },
     rightButton: {
       right: 0,
+    },
+    footerContainer: {
+      height: 300,
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 10,
+    },
+    footerText: {
+      marginTop: 8,
+      fontSize: 12,
     },
   });
 

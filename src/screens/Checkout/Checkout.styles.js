@@ -1,11 +1,5 @@
 import {StyleSheet} from 'react-native';
-import {
-  BorderRadius,
-  Colors,
-  FontSizes,
-  FontWeights,
-  Shadows,
-} from '../../theme/theme';
+import {BorderRadius, FontSizes, FontWeights, Shadows} from '../../theme/theme';
 import {scale} from '../../utils/scaling';
 
 const createStyles = theme =>
@@ -129,7 +123,7 @@ const createStyles = theme =>
     variationsContainer: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: 8,
+      marginBlock: scale(6),
     },
 
     variationsLabel: {
@@ -151,14 +145,14 @@ const createStyles = theme =>
     },
 
     ratingContainer: {
+      gap: scale(10),
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: 8,
+      marginBottom: scale(6),
     },
     ratingText: {
       color: theme.text,
-      fontSize: 14,
-      marginRight: 4,
+      fontSize: FontSizes.small,
     },
     stars: {
       flexDirection: 'row',

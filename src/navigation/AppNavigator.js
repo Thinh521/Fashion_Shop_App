@@ -4,7 +4,6 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {getBool} from '../utils/storage';
 import MainTabNavigator from './MainTabNavigator';
 import NoBottomTab from './NoBottomTab';
-import SplashScreen from 'react-native-splash-screen';
 import Onboarding from '../screens/Onboarding';
 import SplashScreens from '../screens/Splash';
 
@@ -15,20 +14,16 @@ const AppNavigator = () => {
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
 
   useEffect(() => {
-    const checkStatus = () => {
-      const completed = getBool('hasCompletedOnboarding');
+    const checkStatus = async () => {
+      const completed = await getBool('hasCompletedOnboarding');
       setHasCompletedOnboarding(!!completed);
 
       setTimeout(() => {
         setIsLoading(false);
-      }, 100);
+      }, 1500);
     };
 
     checkStatus();
-  }, []);
-
-  useEffect(() => {
-    SplashScreen.hide();
   }, []);
 
   if (isLoading) {

@@ -1,12 +1,13 @@
 import React, {useCallback, useState} from 'react';
-import {Text, View, StyleSheet, Alert, ScrollView} from 'react-native';
+import {Text, View, StyleSheet, Alert, ScrollView, Modal} from 'react-native';
 import FastImage from 'react-native-fast-image';
 import {Button} from '../../components/ui/button/Button';
-import SuccessModal from '../../components/ui/modal/SuccessModal';
 import Images from '../../assets/images/Images';
 import {useNavigation, useRoute} from '@react-navigation/core';
 import {useTheme} from '../../contexts/ThemeContext';
 import {getOrder, saveOrder} from '../../utils/storage';
+import {Colors} from '../../theme/theme';
+import {Successs} from '../../assets/icons/Icons';
 
 const ShippingScreen = () => {
   const {theme} = useTheme();
@@ -42,24 +43,18 @@ const ShippingScreen = () => {
         navigation.navigate('MainTabNavigator', {
           screen: 'Home',
         });
-      }, 2000);
+      }, 3000);
     } catch (error) {
       console.error('Lỗi lưu đơn hàng:', error);
       Alert.alert('Lỗi', 'Không thể lưu đơn hàng. Vui lòng thử lại.');
     }
   }, [navigation, order]);
 
-  const handlePayment = useCallback(() => {
-    setIsModalVisible(true);
-    setTimeout(() => {
-      setIsModalVisible(false);
-    }, 2000);
-  }, []);
-
   // Tính giá động
   const orderPrice = order?.product
-    ? parseFloat(order.product.price.replace('₹', '') || 0) *
-      (order.product.quantity || 1)
+    ? parseFloat(order.product.price ?? '0')
+        .toString()
+        .replace('₹', '') * (order.product.quantity || 1)
     : 0;
   const shippingFee = 30;
   const totalPrice = orderPrice + shippingFee;
@@ -99,16 +94,24 @@ const ShippingScreen = () => {
               style={[styles.sectionTitle, {color: theme.text, marginTop: 20}]}>
               Order Details
             </Text>
+
             <View style={{marginBottom: 20}}>
-              <Text style={[styles.infoText, {color: theme.text}]}>
-                Product: {order?.product?.productName || 'N/A'}
+              <Text
+                numberOfLines={1}
+                ellipsizeMode="tail"
+                style={[styles.infoText, {color: theme.text}]}>
+                Product: {order?.product?.title || 'N/A'}
               </Text>
-              <Text style={[styles.infoText, {color: theme.text}]}>
-                Color: {order?.product?.colorName || 'N/A'}
-              </Text>
-              <Text style={[styles.infoText, {color: theme.text}]}>
-                Size: {order?.product?.sizeName || 'N/A'}
-              </Text>
+              {order?.product?.colorName && (
+                <Text style={[styles.infoText, {color: theme.text}]}>
+                  Color: {order?.product?.colorName || 'N/A'}
+                </Text>
+              )}
+              {order?.product?.sizeName && (
+                <Text style={[styles.infoText, {color: theme.text}]}>
+                  Size: {order?.product?.sizeName || 'N/A'}
+                </Text>
+              )}
               <Text style={[styles.infoText, {color: theme.text}]}>
                 Quantity: {order?.product?.quantity || 'N/A'}
               </Text>
@@ -119,7 +122,7 @@ const ShippingScreen = () => {
                 Address: {order?.address || 'N/A'}
               </Text>
               <Text style={[styles.infoText, {color: theme.text}]}>
-                Name: {order?.user?.name || 'N/A'}
+                Name: {order?.user?.username || 'N/A'}
               </Text>
               <Text style={[styles.infoText, {color: theme.text}]}>
                 Phone: {order?.user?.phone || 'N/A'}
@@ -160,23 +163,24 @@ const ShippingScreen = () => {
           </View>
 
           <Button
-            text="Pay Now"
-            onPress={handlePayment}
-            buttonStyle={[styles.continueButton, {backgroundColor: '#F83758'}]}
-            textStyle={[styles.continueButtonText, {color: theme.text}]}
-          />
-          <Button
             text="Confirm Order"
             onPress={handleConfirmOrder}
-            buttonStyle={[styles.continueButton, {backgroundColor: '#2a52be'}]}
-            textStyle={[styles.continueButtonText, {color: theme.text}]}
+            buttonStyle={[styles.continueButton]}
+            textStyle={styles.continueButtonText}
           />
 
-          <SuccessModal
+          <Modal
             visible={isModalVisible}
-            message="Order confirmed successfully."
-            onClose={() => setIsModalVisible(false)}
-          />
+            transparent
+            animationType="fade"
+            onRequestClose={() => setIsModalVisible(false)}>
+            <View style={styles.overlay}>
+              <View style={styles.modalContent}>
+                <Successs />
+                <Text style={styles.modalText}>Payment done successfully.</Text>
+              </View>
+            </View>
+          </Modal>
         </View>
       </ScrollView>
     </View>
@@ -184,6 +188,22 @@ const ShippingScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '82%',
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 16,
+    alignItems: 'center',
+  },
+  modalText: {
+    color: Colors.black,
+  },
   sectionContainer: {
     borderRadius: 8,
     padding: 16,
@@ -252,6 +272,7 @@ const styles = StyleSheet.create({
   },
   continueButtonText: {
     fontSize: 16,
+    color: Colors.white,
     fontWeight: 'bold',
   },
 });

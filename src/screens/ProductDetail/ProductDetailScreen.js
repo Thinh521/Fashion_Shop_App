@@ -6,9 +6,9 @@ import {
   ScrollView,
   FlatList,
   Dimensions,
-  Image,
   Alert,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import commonStyles from '../../styles/commonStyles';
 import {
@@ -41,20 +41,23 @@ import {IconButton} from '../../components/ui/button/Button';
 import LottieView from 'lottie-react-native';
 import {useTheme} from '../../contexts/ThemeContext';
 import createStyles from './ProductDetailStyles';
+import FastImage from 'react-native-fast-image';
+import {fetchProductsDetail} from '../../api/productApi';
 
 const {width} = Dimensions.get('window');
 const IMAGE_WIDTH = width;
 const IMAGE_HEIGHT = 300;
 
 const ProductDetailScreen = item => {
-  const {product} = useRoute().params;
-
+  const {productId} = useRoute().params;
   const flatListRef = useRef(null);
   const navigation = useNavigation();
-
   const {theme} = useTheme();
   const styles = createStyles(theme);
 
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
   const [availableStock, setAvailableStock] = useState(null);
@@ -66,6 +69,46 @@ const ProductDetailScreen = item => {
   // Lấy thông tin user hiện tại
   const currentUser = getCurrentUser();
   const userId = currentUser?.id;
+
+  // Lấy dữ liệu từ API
+  useEffect(() => {
+    const loadProduct = async () => {
+      if (!productId) {
+        setError('Không tìm thấy ID sản phẩm');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const data = await fetchProductsDetail(productId);
+        setProduct(data);
+        setError('');
+      } catch (err) {
+        setError(err.message || 'Không thể tải thông tin sản phẩm');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProduct();
+  }, [productId]);
+
+  // Cập nhật màu sắc và kiểm tra wishlist
+  useEffect(() => {
+    if (product?.colors?.length > 0) {
+      setSelectedColor(product.colors[0]);
+    }
+    if (userId && product) {
+      checkWishlistStatus();
+    }
+  }, [product, userId]);
+
+  // Tính tổng số lượng tồn kho
+  useEffect(() => {
+    const totalQuantity = calculateTotalStock(product?.variants);
+    setTotalStock(totalQuantity);
+  }, [product]);
 
   const increase = () => {
     if (!selectedColor || !selectedSize) {
@@ -134,23 +177,25 @@ const ProductDetailScreen = item => {
   );
 
   const handleAddToCart = () => {
-    if (!userId) {
-      Alert.alert(
-        'Thông báo',
-        'Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng',
-      );
-      return;
-    }
+    // if (!userId) {
+    //   Alert.alert(
+    //     'Thông báo',
+    //     'Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng',
+    //   );
+    //   return;
+    // }
 
-    if (!selectedColor || !selectedSize) {
-      Alert.alert(
-        'Chọn phân loại',
-        'Vui lòng chọn màu sắc và kích thước trước khi thêm vào giỏ hàng',
-      );
-      return;
-    }
+    // if (!selectedColor || !selectedSize) {
+    //   Alert.alert(
+    //     'Chọn phân loại',
+    //     'Vui lòng chọn màu sắc và kích thước trước khi thêm vào giỏ hàng',
+    //   );
+    //   return;
+    // }
 
-    const stock = product.variants?.[selectedColor]?.[selectedSize] || 0;
+    const stock = product.stock || 10;
+
+    // const stock = product.variants?.[selectedColor]?.[selectedSize] || 0;
     if (stock < 1) {
       Alert.alert('Hết hàng', 'Sản phẩm bạn chọn đã hết hàng');
       return;
@@ -158,68 +203,66 @@ const ProductDetailScreen = item => {
 
     const cartItem = {
       ...product,
-      selectedColor,
-      selectedSize,
+      // selectedColor,
+      // selectedSize,
       quantity: Math.min(quantity, stock),
       availableStock: stock,
       addedAt: new Date().toISOString(),
-      colorName: selectedColor,
-      sizeName: selectedSize,
+      // colorName: selectedColor,
+      // sizeName: selectedSize,
       variantPrice: product.price,
-      variantId: `${product.id}_${selectedColor}_${selectedSize}_${Date.now()}`, // Tạo variantId duy nhất
+      variantId: `${product.id}_${Date.now()}`, // Tạo variantId duy nhất
+      // _${selectedColor}_${selectedSize}
     };
 
     addToCart(userId, cartItem);
   };
 
   const handleBuyNow = () => {
-    if (!userId) {
-      Alert.alert('Thông báo', 'Bạn cần đăng nhập để mua hàng');
-      return;
-    }
-    if (!selectedColor || !selectedSize) {
-      Alert.alert(
-        'Chọn phân loại',
-        'Vui lòng chọn màu sắc và kích thước trước khi mua',
-      );
-      return;
-    }
-    const stock = product.variants?.[selectedColor]?.[selectedSize] || 0;
+    // if (!userId) {
+    //   Alert.alert('Thông báo', 'Bạn cần đăng nhập để mua hàng');
+    //   return;
+    // }
+    // if (!selectedColor || !selectedSize) {
+    //   Alert.alert(
+    //     'Chọn phân loại',
+    //     'Vui lòng chọn màu sắc và kích thước trước khi mua',
+    //   );
+    //   return;
+    // }
+
+    // const stock = product.variants?.[selectedColor]?.[selectedSize] || 0;
+
+    const stock = product.stock;
+
     if (stock < 1) {
       Alert.alert('Hết hàng', 'Sản phẩm bạn chọn đã hết hàng');
       return;
     }
-    const cartItem = {
+    const buyItem = {
       ...product,
-      selectedColor,
-      selectedSize,
+      // selectedColor,
+      // selectedSize,
       quantity: Math.min(quantity, stock),
       availableStock: stock,
       addedAt: new Date().toISOString(),
-      colorName: selectedColor,
-      sizeName: selectedSize,
+      // colorName: selectedColor,
+      // sizeName: selectedSize,
       variantPrice: product.price,
-      variantId: `${product.id}_${selectedColor}_${selectedSize}_${Date.now()}`,
+      variantId: `${product.id}_${Date.now()}`,
     };
     navigation.navigate('NoBottomTab', {
       screen: 'Checkout',
-      params: {product: cartItem},
+      params: {product: buyItem},
     });
   };
 
   const checkWishlistStatus = () => {
+    if (!product) return;
     const wishlist = getWishList(userId);
     const isInWishList = wishlist.some(item => item.id === product.id);
     setIsWishlisted(isInWishList);
   };
-
-  useFocusEffect(
-    useCallback(() => {
-      const wishlist = getWishList(userId);
-      const isInWishList = wishlist.some(item => item.id === product.id);
-      setIsWishlisted(isInWishList);
-    }, [product, userId]),
-  );
 
   const toggleWishlist = () => {
     if (!userId) return Alert.alert('Oops!', 'Bạn cần đăng nhập trước');
@@ -233,20 +276,15 @@ const ProductDetailScreen = item => {
     setIsWishlisted(!isWishlisted);
   };
 
-  useEffect(() => {
-    if (product?.colors?.length > 0) {
-      setSelectedColor(product.colors[0]);
-    }
-    if (userId) {
-      checkWishlistStatus();
-    }
-  }, [product, userId]);
-
-  const getDiscountedPrice = (priceString, discountPercent) => {
-    const originalPrice = parseFloat(priceString.replace(/[^\d.]/g, ''));
-    const discountedPrice = originalPrice * (1 - discountPercent / 100);
-    return `₹${discountedPrice.toFixed(0)}`;
-  };
+  const getDiscountedPrice = useCallback((price, discountPercentage) => {
+    const parsedPrice = parseFloat(price) || 0;
+    const discount = parseFloat(discountPercentage) || 0;
+    const discounted = parsedPrice - (parsedPrice * discount) / 100;
+    return discounted.toLocaleString('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    });
+  }, []);
 
   const handleNext = () => {
     if (currentIndex < product.images.length - 1) {
@@ -277,11 +315,6 @@ const ProductDetailScreen = item => {
 
     return total;
   };
-
-  useEffect(() => {
-    const totalQuantity = calculateTotalStock(product.variants);
-    setTotalStock(totalQuantity);
-  }, [product]);
 
   const handleDotPress = index => {
     setCurrentIndex(index);
@@ -353,6 +386,34 @@ const ProductDetailScreen = item => {
     );
   };
 
+  if (loading) {
+    return (
+      <View style={[styles.productDetailContainer, commonStyles.center]}>
+        <ActivityIndicator size="large" color={theme.primary} />
+        <Text style={{marginTop: 10, color: theme.text}}>Đang tải...</Text>
+      </View>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <View style={[styles.productDetailContainer, commonStyles.center]}>
+        <Text style={[styles.errorText, {color: theme.error}]}>
+          {error || 'Không tìm thấy sản phẩm'}
+        </Text>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={[
+            commonStyles.rowCenter,
+            styles.footerButton,
+            styles.buyButton,
+          ]}>
+          <Text style={styles.buttonText}>Quay lại</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.productDetailContainer}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -360,16 +421,20 @@ const ProductDetailScreen = item => {
         <View style={styles.productDetailSLider}>
           <FlatList
             ref={flatListRef}
-            data={product.images}
+            data={product.images || []}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
             keyExtractor={(_, index) => index.toString()}
             renderItem={({item}) => (
-              <Image
-                source={item}
+              <FastImage
+                source={{
+                  uri: item || 'https://via.placeholder.com/300',
+                  priority: FastImage.priority.normal,
+                }}
                 style={{width: IMAGE_WIDTH, height: IMAGE_HEIGHT}}
-                resizeMode="contain"
+                resizeMode={FastImage.resizeMode.contain}
+                fallback
               />
             )}
             onMomentumScrollEnd={e => {
@@ -421,15 +486,21 @@ const ProductDetailScreen = item => {
         {/* Product Info */}
         <View style={styles.productDetailInfo}>
           {/* Product Title */}
-          <Text style={styles.productTitle}>{product.productName}</Text>
-          <Text style={styles.productSubtitle}>{product.title}</Text>
+          <Text style={styles.productTitle}>{product.title}</Text>
+          <Text
+            numberOfLines={2}
+            ellipsizeMode="tail"
+            style={styles.productSubtitle}>
+            {product.description}
+          </Text>
           <View style={[commonStyles.rowSpaceBetween]}>
             <View>
               {/* Rating */}
               <View style={[commonStyles.row, styles.ratingContainer]}>
                 <View style={styles.stars}>
                   {[...Array(5)].map((_, i) => {
-                    const {average} = product.rating;
+                    const average =
+                      product.rating?.average || product.rating || 0;
                     let fillColor = '#ccc';
                     if (i + 1 <= Math.floor(average)) {
                       fillColor = '#EDB310';
@@ -449,17 +520,41 @@ const ProductDetailScreen = item => {
                   })}
                 </View>
                 <Text style={styles.ratingCount}>
-                  ({product.rating.countRating.toLocaleString()})
+                  ({product.rating.average})
                 </Text>
               </View>
 
               {/* Price */}
               <View style={[commonStyles.row, styles.priceContainer]}>
-                <Text style={styles.originalPrice}>{product.price}</Text>
+                {/* Giá gốc */}
+                {product.discountPercentage ? (
+                  <Text style={styles.originalPrice}>
+                    {product.price?.toLocaleString('vi-VN', {
+                      style: 'currency',
+                      currency: 'VND',
+                    }) || 'Liên hệ'}
+                  </Text>
+                ) : null}
+
+                {/* Giá đã giảm */}
                 <Text style={styles.discountedPrice}>
-                  {getDiscountedPrice(product.price, product.discount)}
+                  {product.discountPercentage
+                    ? getDiscountedPrice(
+                        product.price,
+                        product.discountPercentage,
+                      )
+                    : product.price?.toLocaleString('vi-VN', {
+                        style: 'currency',
+                        currency: 'VND',
+                      }) || 'Liên hệ'}
                 </Text>
-                <Text style={styles.discountBadge}>{product.discount} Off</Text>
+
+                {/* Badge giảm giá */}
+                {product.discountPercentage ? (
+                  <Text style={styles.discountBadge}>
+                    {Math.round(product.discountPercentage)}%
+                  </Text>
+                ) : null}
               </View>
             </View>
 
@@ -482,15 +577,15 @@ const ProductDetailScreen = item => {
           </View>
 
           {/* Color Selection */}
-          <View style={styles.colorContainer}>
+          {/* <View style={styles.colorContainer}>
             <Text style={styles.colorTitle}>Color:</Text>
             <View style={styles.colorBox}>
               {product?.colors?.map(renderColorOption)}
             </View>
-          </View>
+          </View> */}
 
           {/* Size Selection */}
-          <View>
+          {/* <View>
             <Text style={styles.sizeTitle}>
               Size: {selectedSize || 'Select a size'}
             </Text>
@@ -506,7 +601,7 @@ const ProductDetailScreen = item => {
                 {availableStock !== 1 ? 's' : ''}
               </Text>
             )}
-          </View>
+          </View> */}
 
           <View>
             <Text style={styles.quantityTitle}>Quantity:</Text>
@@ -555,14 +650,16 @@ const ProductDetailScreen = item => {
               </View>
               <View style={styles.availableContainer}>
                 <Text style={{color: theme.text}}>Available: </Text>
-                <Text style={{color: theme.text}}>{totalStock}</Text>
+                <Text style={{color: theme.text}}>{product.stock}</Text>
               </View>
             </View>
           </View>
 
           {/* Description */}
-          <Text style={styles.detailsTitle}>Product Details</Text>
-          <Text style={styles.detailsText}>{product.description}</Text>
+          <View>
+            <Text style={styles.detailsTitle}>Product Details</Text>
+            <Text style={styles.detailsText}>{product.description}</Text>
+          </View>
 
           {/* Features */}
           <View style={[commonStyles.row, styles.featuresContainer]}>
@@ -597,7 +694,7 @@ const ProductDetailScreen = item => {
             styles.footerButton,
             styles.cartButton,
           ]}>
-          <CartIcon color="white" width={24} height={24} />
+          <CartIcon style={styles.iconCart} />
           <Text style={styles.buttonText}>Add to cart</Text>
         </TouchableOpacity>
 

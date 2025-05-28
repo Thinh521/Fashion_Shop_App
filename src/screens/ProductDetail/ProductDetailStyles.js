@@ -276,12 +276,17 @@ const createStyles = theme =>
     cartButton: {
       backgroundColor: '#0B3689',
       flex: 1,
+      height: 40,
       padding: 16,
       borderRadius: 8,
       marginRight: 8,
       flexDirection: 'row',
       justifyContent: 'center',
       alignItems: 'center',
+    },
+
+    iconCart: {
+      color: Colors.white,
     },
 
     buyButton: {
