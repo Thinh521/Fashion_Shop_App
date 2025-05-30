@@ -1,52 +1,78 @@
+// context/ThemeContext.js
 import React, {
   createContext,
   useContext,
   useState,
   useEffect,
   useCallback,
+  useMemo,
 } from 'react';
 import {Appearance} from 'react-native';
-import { storage } from '../utils/storage';
-import { Colors } from '../theme/theme';
+import {storage} from '../utils/storage';
+import {Colors} from '../theme/theme';
 
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({children}) => {
   const [isDarkMode, setIsDarkMode] = useState(() => {
-    const stored = storage.getString('darkMode');
-    if (stored === 'true') return true;
-    if (stored === 'false') return false;
+    try {
+      const stored = storage.getString('darkMode');
+      if (stored === 'true') return true;
+      if (stored === 'false') return false;
+    } catch (err) {
+      console.warn('Error loading darkMode from storage', err);
+    }
     return Appearance.getColorScheme() === 'dark';
   });
 
   const toggleTheme = useCallback(() => {
     setIsDarkMode(prev => {
       const newValue = !prev;
-      storage.set('darkMode', String(newValue));
+      try {
+        storage.set('darkMode', String(newValue));
+      } catch (err) {
+        console.warn('Error saving darkMode:', err);
+      }
       return newValue;
     });
   }, []);
 
   useEffect(() => {
     const subscription = Appearance.addChangeListener(({colorScheme}) => {
-      const stored = storage.getString('darkMode');
-      if (stored === null) {
-        setIsDarkMode(colorScheme === 'dark');
+      try {
+        const stored = storage.getString('darkMode');
+        if (stored == null) {
+          setIsDarkMode(colorScheme === 'dark');
+        }
+      } catch (err) {
+        console.warn('Error checking darkMode in listener', err);
       }
     });
     return () => subscription.remove();
   }, []);
 
-  const theme = isDarkMode ? darkTheme : lightTheme;
+  const theme = useMemo(
+    () => (isDarkMode ? darkTheme : lightTheme),
+    [isDarkMode],
+  );
+
+  const value = useMemo(
+    () => ({theme, isDarkMode, toggleTheme}),
+    [theme, isDarkMode, toggleTheme],
+  );
 
   return (
-    <ThemeContext.Provider value={{theme, isDarkMode, toggleTheme}}>
-      {children}
-    </ThemeContext.Provider>
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
   );
 };
 
-export const useTheme = () => useContext(ThemeContext);
+export const useTheme = () => {
+  const context = useContext(ThemeContext);
+  if (!context) {
+    throw new Error('useTheme must be used within a ThemeProvider');
+  }
+  return context;
+};
 
 export const lightTheme = {
   mode: 'light',

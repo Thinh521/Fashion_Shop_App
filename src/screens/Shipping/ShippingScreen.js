@@ -7,13 +7,11 @@ import {useNavigation, useRoute} from '@react-navigation/core';
 import {useTheme} from '../../contexts/ThemeContext';
 import {getOrder, saveOrder} from '../../utils/storage';
 import {Colors} from '../../theme/theme';
-import {Successs} from '../../assets/icons/Icons';
 
 const ShippingScreen = () => {
   const {theme} = useTheme();
   const navigation = useNavigation();
   const {order} = useRoute().params || {};
-  const [isModalVisible, setIsModalVisible] = useState(false);
 
   const handleConfirmOrder = useCallback(() => {
     if (!order?.product || !order?.address || !order?.user) {
@@ -37,13 +35,9 @@ const ShippingScreen = () => {
       const updatedOrders = [orderData, ...existingOrders];
       saveOrder(order.user.id, updatedOrders);
 
-      setIsModalVisible(true);
-      setTimeout(() => {
-        setIsModalVisible(false);
-        navigation.navigate('MainTabNavigator', {
-          screen: 'Home',
-        });
-      }, 3000);
+      navigation.navigate('NoBottomTab', {
+        screen: 'OrderSuccess',
+      });
     } catch (error) {
       console.error('Lỗi lưu đơn hàng:', error);
       Alert.alert('Lỗi', 'Không thể lưu đơn hàng. Vui lòng thử lại.');
@@ -168,19 +162,6 @@ const ShippingScreen = () => {
             buttonStyle={[styles.continueButton]}
             textStyle={styles.continueButtonText}
           />
-
-          <Modal
-            visible={isModalVisible}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setIsModalVisible(false)}>
-            <View style={styles.overlay}>
-              <View style={styles.modalContent}>
-                <Successs />
-                <Text style={styles.modalText}>Payment done successfully.</Text>
-              </View>
-            </View>
-          </Modal>
         </View>
       </ScrollView>
     </View>

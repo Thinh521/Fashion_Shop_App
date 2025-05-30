@@ -1,7 +1,7 @@
-import React, {useCallback, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
-  ActivityIndicator,
   Animated,
+  Dimensions,
   ScrollView,
   Text,
   TextInput,
@@ -26,6 +26,10 @@ import {
   updateCartItemInApi,
   deleteCartItemInApi,
 } from '../../api/cartApi';
+import {storage} from '../../utils/storage';
+import SkeletonPlaceholder from 'react-native-skeleton-placeholder';
+import {scale} from '../../utils/scaling';
+import {showMessage} from 'react-native-flash-message';
 
 const ProductItem = React.memo(({item, onDelete, onUpdateQuantity}) => {
   const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -73,7 +77,7 @@ const ProductItem = React.memo(({item, onDelete, onUpdateQuantity}) => {
             }}
           />
           <View style={styles.detailsContainer}>
-            <Text style={styles.productName} numberOfLines={2}>
+            <Text style={styles.productName} numberOfLines={1}>
               {item.title}
             </Text>
             <Text style={styles.productDescription}>
@@ -169,11 +173,26 @@ const calculateItemTotal = (item, quantity) => {
 const CartScreen = () => {
   const navigation = useNavigation();
   const queryClient = useQueryClient();
+  const {width} = Dimensions.get('window');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const userId = 172;
+  const [userId, setUserId] = useState(null);
+
+  useEffect(() => {
+    const userData = storage.getString('currentUser');
+    if (userData) {
+      try {
+        const parsed = JSON.parse(userData);
+        if (parsed?.id) {
+          setUserId(parsed.id);
+        }
+      } catch (err) {
+        console.error('Parse user error:', err);
+      }
+    }
+  }, []);
 
   const {
     data: apiCart,
@@ -237,8 +256,12 @@ const CartScreen = () => {
           queryClient.invalidateQueries(['carts', userId]);
         }
       } catch (e) {
-        console.error('Delete item error:', e);
-        setError('Lỗi khi xóa sản phẩm');
+        showMessage({
+          message: 'Giỏ hàng',
+          description: 'Xóa khỏi giỏ hàng thành công',
+          type: 'danger',
+          duration: 2000,
+        });
       }
     },
     [userId, queryClient, apiCart],
@@ -257,8 +280,12 @@ const CartScreen = () => {
           queryClient.invalidateQueries(['carts', userId]);
         }
       } catch (e) {
-        console.error('Update quantity error:', e);
-        setError('Lỗi khi cập nhật số lượng');
+        showMessage({
+          message: 'Giỏ hàng',
+          description: 'Cập nhật giỏ hàng không thành công',
+          type: 'danger',
+          duration: 2000,
+        });
       }
     },
     [userId, queryClient, apiCart],
@@ -271,9 +298,54 @@ const CartScreen = () => {
   );
 
   if (loading || apiLoading) {
+    const skeletonCount = apiCart?.products?.length || 3;
+
     return (
-      <View style={commonStyles.center}>
-        <ActivityIndicator size="large" color="gray" />
+      <View style={{padding: scale(16)}}>
+        {Array(skeletonCount)
+          .fill(0)
+          .map((_, index) => (
+            <View
+              key={index}
+              style={{
+                padding: 16,
+                borderWidth: 1,
+                borderColor: '#ccc',
+                borderRadius: 8,
+                marginBottom: 16,
+              }}>
+              <SkeletonPlaceholder borderRadius={8} speed={1200}>
+                <View
+                  style={{flexDirection: 'row', alignItems: 'center', gap: 16}}>
+                  <SkeletonPlaceholder.Item
+                    width={scale(120)}
+                    height={scale(135)}
+                    borderRadius={4}
+                  />
+
+                  <View style={{flexDirection: 'column'}}>
+                    <SkeletonPlaceholder.Item
+                      width={width - scale(120) - scale(16 * 3)}
+                      height={24}
+                      borderRadius={4}
+                      marginBottom={16}
+                    />
+                    <SkeletonPlaceholder.Item
+                      width={width - scale(120) - scale(16 * 10)}
+                      height={24}
+                      borderRadius={4}
+                      marginBottom={16}
+                    />
+                    <SkeletonPlaceholder.Item
+                      width={width - scale(120) - scale(16 * 3)}
+                      height={24}
+                      borderRadius={4}
+                    />
+                  </View>
+                </View>
+              </SkeletonPlaceholder>
+            </View>
+          ))}
       </View>
     );
   }

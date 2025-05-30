@@ -32,6 +32,7 @@ const Images = {
     fallback: require('./common/loginRequired.png'),
     splashScreen: require('./common/splash_screen.png'),
     logoScreen: require('./common/logo_screen.png'),
+    shopMapIcon: require('./common/shopping-bag-fill.png'),
   },
   auth: {
     facebook: require('./auth/facebook.png'),

@@ -250,7 +250,6 @@ const createStyles = theme =>
 
     featuresContainer: {
       gap: 10,
-      marginBlockEnd: Spacing.s10,
     },
 
     featureItem: {
@@ -333,6 +332,9 @@ const createStyles = theme =>
       borderTopWidth: 1,
       borderTopColor: theme.border,
       backgroundColor: theme.card,
+    },
+    reviewContainer: {
+      padding: scale(16),
     },
   });
 

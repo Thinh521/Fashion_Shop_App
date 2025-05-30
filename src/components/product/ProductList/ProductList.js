@@ -13,13 +13,16 @@ import {useNavigation, useFocusEffect} from '@react-navigation/core';
 import {getCurrentUser, getWishList} from '../../../utils/storage';
 import {useTheme} from '../../../contexts/ThemeContext';
 import createStyles from './ProductList.styles';
-import LoadingOverlay from '../../lottie/LoadingOverlay';
 import {useInfiniteQuery} from '@tanstack/react-query';
 import {fetchProducts} from '../../../api/productApi';
+import {scale} from '../../../utils/scaling';
+import SkeletonPlaceholder from 'react-native-skeleton-placeholder';
+import {FontSizes} from '../../../theme/theme';
+import commonStyles from '../../../styles/commonStyles';
 
 const {width: screenWidth} = Dimensions.get('window');
-const ITEM_WIDTH = (screenWidth - 48) / 2; // 15px padding each side
-const ITEM_HEIGHT = ITEM_WIDTH * 1.4; // Aspect ratio
+const ITEM_WIDTH = (screenWidth - 48) / 2;
+const ITEM_HEIGHT = ITEM_WIDTH * 1.4;
 
 // Memoized ProductItem component để tránh re-render không cần thiết
 const ProductItem = React.memo(({item, onPress, styles, theme}) => {
@@ -27,7 +30,6 @@ const ProductItem = React.memo(({item, onPress, styles, theme}) => {
     onPress(item.id);
   }, [item.id, onPress]);
 
-  // Pre-calculate rating stars để tránh tính toán lại
   const stars = useMemo(() => {
     const average = item.rating?.average || item.rating || 0;
     return [...Array(5)].map((_, i) => {
@@ -41,7 +43,6 @@ const ProductItem = React.memo(({item, onPress, styles, theme}) => {
     });
   }, [item.rating]);
 
-  // Format price một lần
   const formattedPrice = useMemo(() => {
     if (typeof item.price === 'number') {
       return item.price.toLocaleString('vi-VN', {
@@ -106,10 +107,14 @@ const ProductList = ({
   const {theme} = useTheme();
   const styles = createStyles(theme);
   const navigation = useNavigation();
-  const [wishlistedSet, setWishlistedSet] = useState(new Set());
   const flatListRef = useRef(null);
+  const {width: SCREEN_WIDTH} = Dimensions.get('window');
+  const ITEM_MARGIN = scale(10);
+  const productItemWidth = (SCREEN_WIDTH - ITEM_MARGIN * 3 - 10) / 2;
+  const [wishlistedSet, setWishlistedSet] = useState(new Set());
 
-  // Sử dụng ref để track loading state và tránh re-render
+  console.log(productItemWidth);
+
   const loadingStateRef = useRef({
     isInitialLoad: true,
     hasScrolledToEnd: false,
@@ -127,12 +132,11 @@ const ProductList = ({
     queryKey: ['products', searchItem, filters, sort],
     queryFn: ({pageParam = 1}) => fetchProducts({pageParam}),
     getNextPageParam: (lastPage, allPages) => {
-      // Tăng giới hạn trang để có thể tải nhiều sản phẩm hơn
       if (allPages.length >= 10) return undefined;
       return lastPage.nextPage;
     },
     staleTime: 5 * 60 * 1000,
-    cacheTime: 10 * 60 * 1000, // Cache 10 phút
+    cacheTime: 10 * 60 * 1000,
   });
 
   // Optimize allProducts calculation với shallow comparison
@@ -255,7 +259,6 @@ const ProductList = ({
     }));
   }, [allProducts, searchItem, filters, sort, wishlistedSet]);
 
-  // Update total product count
   useEffect(() => {
     setTotalProduct(productList.length);
     if (loadingStateRef.current.isInitialLoad && productList.length > 0) {
@@ -263,7 +266,6 @@ const ProductList = ({
     }
   }, [productList.length, setTotalProduct]);
 
-  // Optimize load more function
   const handleLoadMore = useCallback(() => {
     if (
       hasNextPage &&
@@ -307,20 +309,11 @@ const ProductList = ({
     if (!isFetchingNextPage) return null;
 
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="small" color={theme.primary} />
-        <Text style={[styles.loadingText, {color: theme.text}]}>
-          Đang tải thêm sản phẩm...
-        </Text>
+      <View>
+        <ActivityIndicator size="large" color={theme.primary} />
       </View>
     );
-  }, [
-    isFetchingNextPage,
-    styles.loadingContainer,
-    styles.loadingText,
-    theme.primary,
-    theme.text,
-  ]);
+  }, [isFetchingNextPage, theme.primary]);
 
   // Empty component
   const renderEmptyComponent = useCallback(
@@ -333,13 +326,87 @@ const ProductList = ({
   // Loading state
   if (isLoading && !allProducts.length) {
     return (
-      <View style={{flex: 1}}>
-        <LoadingOverlay />
+      <View>
+        {[0, 1].map(row => (
+          <View
+            key={row}
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              marginBottom: ITEM_MARGIN,
+            }}>
+            {[0, 1].map(col => {
+              const index = row * 2 + col;
+              const isLeftItem = col === 0;
+              return (
+                <SkeletonPlaceholder key={index} borderRadius={8} speed={1200}>
+                  <View
+                    style={{
+                      marginRight: isLeftItem ? ITEM_MARGIN : 0,
+                      width: productItemWidth,
+                      borderWidth: 1,
+                      borderColor: '#ccc',
+                      borderRadius: 8,
+                      overflow: 'hidden',
+                    }}>
+                    {/* Ảnh */}
+                    <SkeletonPlaceholder.Item
+                      width="100%"
+                      height={scale(146)}
+                      borderRadius={4}
+                    />
+
+                    {/* Thông tin sản phẩm */}
+                    <View style={{padding: scale(10)}}>
+                      <SkeletonPlaceholder.Item
+                        width="100%"
+                        height={scale(14)}
+                        marginBottom={scale(8)}
+                      />
+                      <SkeletonPlaceholder.Item
+                        width="100%"
+                        height={scale(30)}
+                        marginBottom={scale(8)}
+                      />
+                      <SkeletonPlaceholder.Item
+                        width="50%"
+                        height={scale(16)}
+                        marginBottom={scale(6)}
+                      />
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          justifyContent: 'space-between',
+                        }}>
+                        {/* Rating */}
+                        <View style={{flexDirection: 'row'}}>
+                          {Array(5)
+                            .fill(0)
+                            .map((_, starIndex) => (
+                              <SkeletonPlaceholder.Item
+                                key={starIndex}
+                                width={scale(12)}
+                                height={scale(12)}
+                                marginRight={scale(2)}
+                              />
+                            ))}
+                        </View>
+                        <SkeletonPlaceholder.Item
+                          width="20%"
+                          height={scale(12)}
+                        />
+                      </View>
+                    </View>
+                  </View>
+                </SkeletonPlaceholder>
+              );
+            })}
+          </View>
+        ))}
       </View>
     );
   }
 
-  // Error state
   if (isError) {
     return (
       <View style={styles.center}>

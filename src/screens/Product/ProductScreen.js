@@ -196,7 +196,6 @@ const ProductScreen = () => {
   const {data: categories = []} = useCategories();
   const {categorySlug, categoryName} = route.params || {};
 
-  // State management
   const [searchItem, setSearchItem] = useState('');
   const [totalProduct, setTotalProduct] = useState(0);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
@@ -208,7 +207,6 @@ const ProductScreen = () => {
   const [sortModalVisible, setSortModalVisible] = useState(false);
   const [filterReset, setFilterReset] = useState(false);
 
-  // Refs
   const slideAnim = useRef(new Animated.Value(0)).current;
   const searchTimeoutRef = useRef(null);
 
@@ -226,7 +224,6 @@ const ProductScreen = () => {
     [categories],
   );
 
-  // Debounced search function
   const debouncedSearch = useMemo(
     () =>
       debounce(text => {
@@ -235,7 +232,6 @@ const ProductScreen = () => {
     [],
   );
 
-  // Initialize filters from route params
   useEffect(() => {
     if (categorySlug && categoryName) {
       const newFilters = {
@@ -255,7 +251,6 @@ const ProductScreen = () => {
     }
   }, [categorySlug, categoryName]);
 
-  // Focus effect for product count
   useFocusEffect(
     useCallback(() => {
       InteractionManager.runAfterInteractions(() => {
@@ -295,7 +290,6 @@ const ProductScreen = () => {
     [slideAnim, filters, sort],
   );
 
-  // Filter validation and application
   const applyFilters = useCallback(() => {
     const minPrice = tempFilters.minPrice ? Number(tempFilters.minPrice) : 0;
     const maxPrice = tempFilters.maxPrice
@@ -335,7 +329,6 @@ const ProductScreen = () => {
     toggleModal('filter', false);
   }, [tempFilters, categories, toggleModal]);
 
-  // Sort application
   const applySort = useCallback(() => {
     setSort(tempSort);
     toggleModal('sort', false);
@@ -485,7 +478,6 @@ const ProductScreen = () => {
     ],
   );
 
-  // Cleanup effect
   useEffect(() => {
     return () => {
       if (searchTimeoutRef.current) {

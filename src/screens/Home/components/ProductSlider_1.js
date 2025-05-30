@@ -138,7 +138,7 @@ const ProductSlider_1 = () => {
 
   if (isLoading && !productList.length) {
     return (
-      <View style={styles.container}> 
+      <View style={styles.container}>
         <FlatList
           data={Array(numColumns).fill({})}
           renderItem={({item, index}) => (

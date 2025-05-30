@@ -2,7 +2,12 @@ import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {Animated, FlatList, Text, TouchableOpacity, View} from 'react-native';
 import {useTheme} from '../../contexts/ThemeContext';
 import createStyles from './order.styles';
-import {getCurrentUser, getOrder, removeOrder} from '../../utils/storage';
+import {
+  getCurrentUser,
+  getOrder,
+  removeOrder,
+  updateOrderStatus,
+} from '../../utils/storage';
 import FastImage from 'react-native-fast-image';
 import commonStyles from '../../styles/commonStyles';
 import {Swipeable} from 'react-native-gesture-handler';
@@ -28,6 +33,11 @@ const OrderScreen = () => {
     {label: 'Đã hủy', value: 'cancelled'},
   ];
 
+  const getStatusLabel = status => {
+    const found = ORDER_TAB.find(tab => tab.value === status);
+    return found ? found.label : 'Không xác định';
+  };
+
   const filteredOrders = orders.filter(
     order => order.status === selectedStatus,
   );
@@ -43,14 +53,14 @@ const OrderScreen = () => {
   const handleCancelOrder = useCallback(
     async orderId => {
       try {
-        await removeOrder(user.id, orderId);
+        await updateOrderStatus(user.id, orderId, 'cancelled');
         const updatedOrders = await getOrder(user.id);
         setOrders(updatedOrders);
       } catch (error) {
         console.error('Lỗi khi hủy đơn hàng:', error);
       }
     },
-    [user.id],
+    [user?.id],
   );
 
   useEffect(() => {
@@ -79,7 +89,7 @@ const OrderScreen = () => {
 
   return (
     <View style={{backgroundColor: theme.background, padding: 16, flex: 1}}>
-      <View style={styles.orderBoxTab}>
+      <View>
         <FlatList
           horizontal
           data={ORDER_TAB}
@@ -136,7 +146,7 @@ const OrderScreen = () => {
                           item.status === 'pending' ? theme.text : theme.text,
                       },
                     ]}>
-                    {item.status === 'pending' ? 'Đang xử lý' : 'Hoàn thành'}
+                    <Text>{getStatusLabel(item.status)}</Text>
                   </Text>
                 </View>
                 <View style={styles.divider} />
@@ -194,6 +204,12 @@ const OrderScreen = () => {
                 <View style={styles.cardFooter}>
                   <Button
                     text="Đã nhận được hàng"
+                    onPress={() =>
+                      navigation.navigate('NoBottomTab', {
+                        screen: 'ProductReview',
+                        params: {order: item},
+                      })
+                    }
                     textStyle={[styles.buttonText, {color: Colors.primary}]}
                     buttonStyle={[styles.buttonFooter, styles.buttonFooterLine]}
                   />

@@ -15,6 +15,8 @@ import CartScreen from '../screens/Cart';
 import MapPickerScreen from '../screens/MapPicker/MapPickerScreen';
 import OrderScreen from '../screens/order/orderScreen';
 import OrderDetailScreen from '../screens/order/OrderDetailScreen';
+import OrderSuccessScreen from '../screens/order/OrderSuccessScreen';
+import ProductReviewScreen from '../screens/ProductReview/ProductReviewScreen';
 
 const routerNoBottomTab = [
   {
@@ -160,6 +162,26 @@ const routerNoBottomTab = [
     options: () => ({
       title: 'OrderDetail',
       headerTitle: 'Chi tiết đơn hàng',
+      headerTitleAlign: 'center',
+      headerBackTitleVisible: false,
+    }),
+  },
+  {
+    name: 'OrderSuccess',
+    component: OrderSuccessScreen,
+    options: () => ({
+      title: 'OrderSuccess',
+      headerTitle: 'Đơn hàng',
+      headerTitleAlign: 'center',
+      headerBackTitleVisible: false,
+    }),
+  },
+  {
+    name: 'ProductReview',
+    component: ProductReviewScreen,
+    options: () => ({
+      title: 'ProductReview',
+      headerTitle: 'Đánh giá',
       headerTitleAlign: 'center',
       headerBackTitleVisible: false,
     }),

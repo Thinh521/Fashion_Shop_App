@@ -19,6 +19,15 @@ export const fetchCartByUserId = async userId => {
   }
 };
 
+export const addToCartItemApi = async (userId, products) => {
+  try {
+    const res = await api.post('/carts/add', {userId, products});
+    return res.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || 'Failed to add to cart');
+  }
+};
+
 export const updateCartItemInApi = async (userId, variantId, quantity) => {
   try {
     const response = await api.put(`carts/${userId}/products/${variantId}`, {

@@ -192,3 +192,36 @@ export const getTotalOrderCount = userId => {
   const orders = getOrder(userId) || [];
   return orders.length;
 };
+
+// ------------------------------------------------------------------------
+// Tạo key riêng cho từng review
+export const getReviewKey = userId => `review_${userId}`;
+
+// Save review
+export const saveReview = (userId, reviewItems) => {
+  const key = getReviewKey(userId);
+  storage.set(key, JSON.stringify(reviewItems));
+};
+
+// Get review
+export const getReview = userId => {
+  const key = getReviewKey(userId);
+  const data = storage.getString(key);
+  console.log(data);
+
+  return data ? JSON.parse(data) : [];
+};
+
+// Add review
+export const addReview = (userId, newReview) => {
+  const reviews = getReview(userId);
+  const updated = [newReview, ...reviews];
+  saveReview(userId, updated);
+};
+
+// Remove review
+export const removeReview = (userId, reviewId) => {
+  const reviews = getReview(userId);
+  const filtered = reviews.filter(review => review.id !== reviewId);
+  saveReview(userId, filtered);
+};

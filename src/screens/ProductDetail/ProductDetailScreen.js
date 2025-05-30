@@ -11,11 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import commonStyles from '../../styles/commonStyles';
-import {
-  useFocusEffect,
-  useNavigation,
-  useRoute,
-} from '@react-navigation/native';
+import {useNavigation, useRoute} from '@react-navigation/native';
 import {
   BuyIcon,
   CartIcon,
@@ -43,12 +39,15 @@ import {useTheme} from '../../contexts/ThemeContext';
 import createStyles from './ProductDetailStyles';
 import FastImage from 'react-native-fast-image';
 import {fetchProductsDetail} from '../../api/productApi';
+import {scale} from '../../utils/scaling';
+import SkeletonPlaceholder from 'react-native-skeleton-placeholder';
 
 const {width} = Dimensions.get('window');
 const IMAGE_WIDTH = width;
 const IMAGE_HEIGHT = 300;
 
 const ProductDetailScreen = item => {
+  const {width} = Dimensions.get('window');
   const {productId} = useRoute().params;
   const flatListRef = useRef(null);
   const navigation = useNavigation();
@@ -66,7 +65,6 @@ const ProductDetailScreen = item => {
   const [quantity, setQuantity] = useState(item.quantity || 1);
   const [totalStock, setTotalStock] = useState(0);
 
-  // Lấy thông tin user hiện tại
   const currentUser = getCurrentUser();
   const userId = currentUser?.id;
 
@@ -94,7 +92,6 @@ const ProductDetailScreen = item => {
     loadProduct();
   }, [productId]);
 
-  // Cập nhật màu sắc và kiểm tra wishlist
   useEffect(() => {
     if (product?.colors?.length > 0) {
       setSelectedColor(product.colors[0]);
@@ -104,7 +101,6 @@ const ProductDetailScreen = item => {
     }
   }, [product, userId]);
 
-  // Tính tổng số lượng tồn kho
   useEffect(() => {
     const totalQuantity = calculateTotalStock(product?.variants);
     setTotalStock(totalQuantity);
@@ -388,9 +384,45 @@ const ProductDetailScreen = item => {
 
   if (loading) {
     return (
-      <View style={[styles.productDetailContainer, commonStyles.center]}>
-        <ActivityIndicator size="large" color={theme.primary} />
-        <Text style={{marginTop: 10, color: theme.text}}>Đang tải...</Text>
+      <View style={{padding: scale(16)}}>
+        <SkeletonPlaceholder borderRadius={8} speed={1200}>
+          <View>
+            <View style={{marginBottom: 40}}>
+              <SkeletonPlaceholder.Item
+                width={width - 32}
+                height={300}
+                borderRadius={10}
+              />
+            </View>
+
+            <View>
+              <SkeletonPlaceholder.Item
+                width={width - 32}
+                height={30}
+                borderRadius={8}
+                marginBottom={25}
+              />
+              <SkeletonPlaceholder.Item
+                width={width - 32}
+                height={30}
+                borderRadius={8}
+                marginBottom={16}
+              />
+              <SkeletonPlaceholder.Item
+                width={width - 32}
+                height={50}
+                borderRadius={8}
+                marginBottom={16}
+              />
+              <SkeletonPlaceholder.Item
+                width={width - 32}
+                height={30}
+                borderRadius={8}
+                marginBottom={16}
+              />
+            </View>
+          </View>
+        </SkeletonPlaceholder>
       </View>
     );
   }
@@ -682,6 +714,11 @@ const ProductDetailScreen = item => {
               <Text style={styles.featureText}>Return policy</Text>
             </View>
           </View>
+        </View>
+
+        {/* Product Review */}
+        <View style={styles.reviewContainer}>
+          <Text style={styles.reviwewTitle}>Review</Text>
         </View>
       </ScrollView>
 

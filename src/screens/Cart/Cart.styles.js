@@ -33,21 +33,20 @@ export default StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 8,
   },
 
   productName: {
     fontSize: 16,
     fontWeight: '600',
     color: '#000000',
-    marginBottom: 4,
+    marginBottom: 12,
     flexShrink: 1,
   },
 
   productDescription: {
     fontSize: 14,
     color: '#666666',
-    marginBottom: 12,
+    marginBottom: 8,
     flexShrink: 1,
   },
 
